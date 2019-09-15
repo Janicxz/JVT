@@ -9,14 +9,20 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using Mpv.NET.Player;
+using MediaToolkit;
+using MediaToolkit.Model;
+using MediaToolkit.Options;
 
 namespace JVT
 {
     public partial class Form1 : Form
     {
         string dllPath = "lib\\mpv-1.dll";
+        string clipPath = "test.mp4";
+        TimeSpan clipStart;
+        TimeSpan clipEnd;
         MpvPlayer player;
-        Timer timerScrollBarUpdate;
+        Timer timerTrackBarUpdate;
 
         public Form1()
         {
@@ -27,59 +33,54 @@ namespace JVT
         {
             // Init
             player = new MpvPlayer(panelPlayer.Handle, dllPath);
-            player.Load("test.mp4");
+            player.Load(clipPath);
             player.Loop = true;
             player.Resume();
             player.MediaLoaded += Player_MediaLoaded;
             player.MediaPaused += Player_MediaPaused;
             player.MediaResumed += Player_MediaResumed;
 
-            timerScrollBarUpdate = new Timer();
-            timerScrollBarUpdate.Interval = 100;
-            timerScrollBarUpdate.Tick += TimerScrollBarUpdate_Tick;
-            timerScrollBarUpdate.Start();
+            timerTrackBarUpdate = new Timer();
+            timerTrackBarUpdate.Interval = 100;
+            timerTrackBarUpdate.Tick += TimerTrackBarUpdate_Tick;
+            timerTrackBarUpdate.Start();
         }
 
         private void Player_MediaResumed(object sender, EventArgs e)
         {
             Console.WriteLine("playback resumed");
-            timerScrollBarUpdate.Start();
+           // timerTrackBarUpdate.Start();
         }
 
         private void Player_MediaPaused(object sender, EventArgs e)
         {
             Console.WriteLine("Playback paused.");
-            timerScrollBarUpdate.Stop();
+           // timerTrackBarUpdate.Stop();
         }
 
-        private void TimerScrollBarUpdate_Tick(object sender, EventArgs e)
+        private void TimerTrackBarUpdate_Tick(object sender, EventArgs e)
         {
             //Console.WriteLine("timer Pos {0}, dur {1}", player.Position, player.Duration);
-            hScrollBarPlayer.Invoke((Action)delegate
+            trackBarPlayer.Invoke((Action)delegate
             {
-                hScrollBarPlayer.Value = (int)player.Position.TotalMilliseconds;
+                trackBarPlayer.Value = (int)player.Position.TotalMilliseconds;
                 //Application.DoEvents();
             });
         }
-
-        private void Player_PositionChanged(object sender, MpvPlayerPositionChangedEventArgs e)
-        {
-            hScrollBarPlayer.Invoke((Action)delegate
-            {
-                hScrollBarPlayer.Value = (int)player.Position.TotalMilliseconds;
-                //Application.DoEvents();
-            });
-        }
-
 
         private void Player_MediaLoaded(object sender, EventArgs e)
         {
-            Console.WriteLine("loaded media Dur:" + player.Duration.TotalMilliseconds);
-            hScrollBarPlayer.Invoke((Action)delegate
+            Console.WriteLine("Loaded media, duration: {0}",player.Duration.TotalMilliseconds);
+            trackBarPlayer.Invoke((Action)delegate
+            {
+                trackBarPlayer.Maximum = (int)player.Duration.TotalMilliseconds;
+                trackBarPlayer.Minimum = 0;
+            });
+            /*hScrollBarPlayer.Invoke((Action)delegate
             {
                 hScrollBarPlayer.Maximum = (int)player.Duration.TotalMilliseconds;
                 hScrollBarPlayer.Minimum = 0;
-            });
+            });*/
 
         }
 
@@ -129,10 +130,10 @@ namespace JVT
 
         private void HScrollBarPlayer_Scroll(object sender, ScrollEventArgs e)
         {
-            timerScrollBarUpdate.Stop();
+            timerTrackBarUpdate.Stop();
             Console.WriteLine("scrolled");
            // player.SeekAsync(TimeSpan.FromMilliseconds(e.NewValue));
-            timerScrollBarUpdate.Start();
+            timerTrackBarUpdate.Start();
         }
 
         private void Form1_KeyDown(object sender, KeyEventArgs e)
@@ -155,6 +156,106 @@ namespace JVT
                 default:
                     break;
             }
+        }
+
+        private void TrackBarPlayer_Scroll(object sender, EventArgs e)
+        {
+            player.SeekAsync(TimeSpan.FromMilliseconds(trackBarPlayer.Value));
+        }
+
+        private void ButtonClipStart_Click(object sender, EventArgs e)
+        {
+            Console.WriteLine("Clip start attempt: " + player.Position);
+            if (clipEnd.TotalMilliseconds == 0)
+            {
+                Console.WriteLine("ClipEnd not set yet.");
+                clipStart = player.Position;
+                int sliderposx = trackBarPlayer.Value * trackBarPlayer.Width / trackBarPlayer.Maximum;
+                Console.WriteLine("Slider pos: " + sliderposx);
+                labelMark1.Left = sliderposx+15;
+            }
+            if(player.Position > clipEnd)
+            {
+                Console.WriteLine("ERR: clip start Position is after clip end!!");
+            }
+            else
+            {
+                clipStart = player.Position;
+                int sliderposx = trackBarPlayer.Value * trackBarPlayer.Width / trackBarPlayer.Maximum;
+                Console.WriteLine("Slider pos: " + sliderposx);
+                labelMark1.Left = sliderposx + 15;
+            }
+            Console.WriteLine("Clip start: " + clipStart);
+        }
+
+        private void ButtonClipEnd_Click(object sender, EventArgs e)
+        {
+            Console.WriteLine("Clip end attempt: " + player.Position);
+            Console.WriteLine("start {0}, end {1}: ", clipStart, clipEnd);
+            if (clipStart.TotalMilliseconds == 0)
+            {
+                Console.WriteLine("ClipStart not set yet.");
+                clipEnd = player.Position;
+                int sliderposx = trackBarPlayer.Value * trackBarPlayer.Width / trackBarPlayer.Maximum;
+                Console.WriteLine("Slider pos: " + sliderposx);
+                labelMarkEnd.Left = sliderposx + 15;
+            }
+            if (player.Position < clipStart)
+            {
+                Console.WriteLine("ERR: clip start Position is after clip end!!");
+            }
+            else
+            {
+                clipEnd = player.Position;
+                int sliderposx = trackBarPlayer.Value * trackBarPlayer.Width / trackBarPlayer.Maximum;
+                Console.WriteLine("Slider pos: " + sliderposx);
+                labelMarkEnd.Left = sliderposx + 15;
+            }
+            Console.WriteLine("Clip end: " + clipEnd);
+           // labelMark1.Text = String.Format("S: {0}, E: {1}", clipStart, clipEnd);
+        }
+
+        private void ButtonRender_Click(object sender, EventArgs e)
+        {
+            Console.WriteLine("Encoding clip..");
+            MediaFile inputFile = new MediaFile { Filename = clipPath };
+            MediaFile outputFile = new MediaFile { Filename = "render\\"+ clipPath };
+            TimeSpan clipLen = clipEnd - clipStart;
+            Console.WriteLine("Input: {0}, output: {1}", inputFile.Filename, outputFile.Filename);
+            using (Engine engine = new Engine())
+            {
+                engine.GetMetadata(inputFile);
+                ConversionOptions options = new ConversionOptions();
+                options.CutMedia(clipStart, clipLen);
+                Console.WriteLine("start at: {0}, end at {1}, duration: {2}", clipStart, clipEnd, clipLen);
+
+                engine.ConvertProgressEvent += Engine_ConvertProgressEvent;
+                engine.ConversionCompleteEvent += Engine_ConversionCompleteEvent;
+                engine.Convert(inputFile, outputFile, options);
+            }
+        }
+
+        private void Engine_ConversionCompleteEvent(object sender, ConversionCompleteEventArgs e)
+        {
+
+            Console.WriteLine("\n------------\nConversion complete!\n------------");
+            Console.WriteLine("Bitrate: {0}", e.Bitrate);
+            Console.WriteLine("Fps: {0}", e.Fps);
+            Console.WriteLine("Frame: {0}", e.Frame);
+            Console.WriteLine("ProcessedDuration: {0}", e.ProcessedDuration);
+            Console.WriteLine("SizeKb: {0}", e.SizeKb);
+            Console.WriteLine("TotalDuration: {0}\n", e.TotalDuration);
+        }
+
+        private void Engine_ConvertProgressEvent(object sender, ConvertProgressEventArgs e)
+        {
+            Console.WriteLine("\n------------\nConverting...\n------------");
+            Console.WriteLine("Bitrate: {0}", e.Bitrate);
+            Console.WriteLine("Fps: {0}", e.Fps);
+            Console.WriteLine("Frame: {0}", e.Frame);
+            Console.WriteLine("ProcessedDuration: {0}", e.ProcessedDuration);
+            Console.WriteLine("SizeKb: {0}", e.SizeKb);
+            Console.WriteLine("TotalDuration: {0}\n", e.TotalDuration);
         }
     }
 }

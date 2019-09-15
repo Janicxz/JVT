@@ -30,8 +30,12 @@
         {
             this.panelPlayer = new System.Windows.Forms.Panel();
             this.buttonPlayerStop = new System.Windows.Forms.Button();
-            this.hScrollBarPlayer = new System.Windows.Forms.HScrollBar();
             this.trackBarPlayer = new System.Windows.Forms.TrackBar();
+            this.labelMark1 = new System.Windows.Forms.Label();
+            this.buttonClipStart = new System.Windows.Forms.Button();
+            this.buttonClipEnd = new System.Windows.Forms.Button();
+            this.buttonRender = new System.Windows.Forms.Button();
+            this.labelMarkEnd = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarPlayer)).BeginInit();
             this.SuspendLayout();
             // 
@@ -42,12 +46,12 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.panelPlayer.Location = new System.Drawing.Point(0, 0);
             this.panelPlayer.Name = "panelPlayer";
-            this.panelPlayer.Size = new System.Drawing.Size(800, 387);
+            this.panelPlayer.Size = new System.Drawing.Size(800, 358);
             this.panelPlayer.TabIndex = 0;
             // 
             // buttonPlayerStop
             // 
-            this.buttonPlayerStop.Location = new System.Drawing.Point(344, 421);
+            this.buttonPlayerStop.Location = new System.Drawing.Point(343, 415);
             this.buttonPlayerStop.Name = "buttonPlayerStop";
             this.buttonPlayerStop.Size = new System.Drawing.Size(75, 23);
             this.buttonPlayerStop.TabIndex = 1;
@@ -55,32 +59,81 @@
             this.buttonPlayerStop.UseVisualStyleBackColor = true;
             this.buttonPlayerStop.Click += new System.EventHandler(this.ButtonPlayerStop_Click);
             // 
-            // hScrollBarPlayer
-            // 
-            this.hScrollBarPlayer.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.hScrollBarPlayer.LargeChange = 2;
-            this.hScrollBarPlayer.Location = new System.Drawing.Point(9, 390);
-            this.hScrollBarPlayer.Name = "hScrollBarPlayer";
-            this.hScrollBarPlayer.Size = new System.Drawing.Size(782, 19);
-            this.hScrollBarPlayer.TabIndex = 2;
-            this.hScrollBarPlayer.Scroll += new System.Windows.Forms.ScrollEventHandler(this.HScrollBarPlayer_Scroll);
-            // 
             // trackBarPlayer
             // 
-            this.trackBarPlayer.Location = new System.Drawing.Point(476, 398);
+            this.trackBarPlayer.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.trackBarPlayer.Location = new System.Drawing.Point(12, 364);
             this.trackBarPlayer.Maximum = 100;
             this.trackBarPlayer.Name = "trackBarPlayer";
-            this.trackBarPlayer.Size = new System.Drawing.Size(104, 45);
+            this.trackBarPlayer.Size = new System.Drawing.Size(776, 45);
             this.trackBarPlayer.TabIndex = 3;
+            this.trackBarPlayer.TickStyle = System.Windows.Forms.TickStyle.None;
+            this.trackBarPlayer.Scroll += new System.EventHandler(this.TrackBarPlayer_Scroll);
+            // 
+            // labelMark1
+            // 
+            this.labelMark1.AutoSize = true;
+            this.labelMark1.BackColor = System.Drawing.SystemColors.Control;
+            this.labelMark1.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelMark1.ForeColor = System.Drawing.Color.DarkRed;
+            this.labelMark1.Location = new System.Drawing.Point(21, 384);
+            this.labelMark1.Name = "labelMark1";
+            this.labelMark1.Size = new System.Drawing.Size(17, 25);
+            this.labelMark1.TabIndex = 4;
+            this.labelMark1.Text = "I";
+            // 
+            // buttonClipStart
+            // 
+            this.buttonClipStart.Location = new System.Drawing.Point(90, 415);
+            this.buttonClipStart.Name = "buttonClipStart";
+            this.buttonClipStart.Size = new System.Drawing.Size(75, 23);
+            this.buttonClipStart.TabIndex = 5;
+            this.buttonClipStart.Text = "Clip Start";
+            this.buttonClipStart.UseVisualStyleBackColor = true;
+            this.buttonClipStart.Click += new System.EventHandler(this.ButtonClipStart_Click);
+            // 
+            // buttonClipEnd
+            // 
+            this.buttonClipEnd.Location = new System.Drawing.Point(188, 415);
+            this.buttonClipEnd.Name = "buttonClipEnd";
+            this.buttonClipEnd.Size = new System.Drawing.Size(75, 23);
+            this.buttonClipEnd.TabIndex = 6;
+            this.buttonClipEnd.Text = "Clip End";
+            this.buttonClipEnd.UseVisualStyleBackColor = true;
+            this.buttonClipEnd.Click += new System.EventHandler(this.ButtonClipEnd_Click);
+            // 
+            // buttonRender
+            // 
+            this.buttonRender.Location = new System.Drawing.Point(500, 415);
+            this.buttonRender.Name = "buttonRender";
+            this.buttonRender.Size = new System.Drawing.Size(75, 23);
+            this.buttonRender.TabIndex = 7;
+            this.buttonRender.Text = "Render clip";
+            this.buttonRender.UseVisualStyleBackColor = true;
+            this.buttonRender.Click += new System.EventHandler(this.ButtonRender_Click);
+            // 
+            // labelMarkEnd
+            // 
+            this.labelMarkEnd.AutoSize = true;
+            this.labelMarkEnd.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelMarkEnd.Location = new System.Drawing.Point(771, 384);
+            this.labelMarkEnd.Name = "labelMarkEnd";
+            this.labelMarkEnd.Size = new System.Drawing.Size(17, 25);
+            this.labelMarkEnd.TabIndex = 8;
+            this.labelMarkEnd.Text = "I";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 441);
+            this.ClientSize = new System.Drawing.Size(800, 453);
+            this.Controls.Add(this.labelMarkEnd);
+            this.Controls.Add(this.buttonRender);
+            this.Controls.Add(this.buttonClipEnd);
+            this.Controls.Add(this.buttonClipStart);
+            this.Controls.Add(this.labelMark1);
             this.Controls.Add(this.trackBarPlayer);
-            this.Controls.Add(this.hScrollBarPlayer);
             this.Controls.Add(this.buttonPlayerStop);
             this.Controls.Add(this.panelPlayer);
             this.KeyPreview = true;
@@ -99,8 +152,12 @@
 
         private System.Windows.Forms.Panel panelPlayer;
         private System.Windows.Forms.Button buttonPlayerStop;
-        private System.Windows.Forms.HScrollBar hScrollBarPlayer;
         private System.Windows.Forms.TrackBar trackBarPlayer;
+        private System.Windows.Forms.Label labelMark1;
+        private System.Windows.Forms.Button buttonClipStart;
+        private System.Windows.Forms.Button buttonClipEnd;
+        private System.Windows.Forms.Button buttonRender;
+        private System.Windows.Forms.Label labelMarkEnd;
     }
 }
 
