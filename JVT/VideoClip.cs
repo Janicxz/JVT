@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace JVT
 {
-    class VideoClip
+    public class VideoClip
     {
         public string filePath;
         public string OutputName;

@@ -16,7 +16,7 @@ using System.IO;
 
 namespace JVT
 {
-    public partial class Form1 : Form
+    public partial class FormMain : Form
     {
         // TODO:
         // Add file selection
@@ -29,16 +29,18 @@ namespace JVT
         // Youtube upload support with network interface select option?
         // integration with OBS?
         // Drag & Drop gets bugged after 3rd drag? something todo with form handle breaking or smth from MPV init?
-
+        // Add 3rd form for rendering settings?
+        // Add encoding status to clipencoder class so we can update UI in formclipslist when one of the encodes finishes.( ie, 1/3 done)
+        // Finish merging clips functionality
         List<VideoClip> clips = new List<VideoClip>();
         string dllPath = "lib\\mpv-1.dll";
-        string clipPath = "test.mp4";
-        TimeSpan clipStart;
-        TimeSpan clipEnd;
+        string clipPath = Path.GetFullPath("test.mp4");
+        TimeSpan clipStart = TimeSpan.FromHours(1337); // Use 1337 hours as unset value.
+        TimeSpan clipEnd = TimeSpan.FromHours(1337);
         MpvPlayer player;
         Timer timerTrackBarUpdate;
 
-        public Form1()
+        public FormMain()
         {
             InitializeComponent();
         }
@@ -176,9 +178,9 @@ namespace JVT
         private void ButtonClipStart_Click(object sender, EventArgs e)
         {
             Console.WriteLine("Clip start attempt: " + player.Position);
-            if (clipEnd.TotalMilliseconds == 0)
+            if (clipEnd == TimeSpan.FromHours(1337))
             {
-                Console.WriteLine("ClipEnd not set yet.");
+                Console.WriteLine("ClipEnd not set.");
                 clipStart = player.Position;
                 int sliderposx = trackBarPlayer.Value * trackBarPlayer.Width / trackBarPlayer.Maximum;
                 Console.WriteLine("Slider pos: " + sliderposx);
@@ -187,6 +189,7 @@ namespace JVT
             if(player.Position > clipEnd)
             {
                 Console.WriteLine("ERR: clip start Position is after clip end!!");
+                resetClipLabels();
             }
             else
             {
@@ -202,9 +205,9 @@ namespace JVT
         {
             Console.WriteLine("Clip end attempt: " + player.Position);
             Console.WriteLine("start {0}, end {1}: ", clipStart, clipEnd);
-            if (clipStart.TotalMilliseconds == 0)
+            if (clipStart == TimeSpan.FromHours(1337))
             {
-                Console.WriteLine("ClipStart not set yet.");
+                Console.WriteLine("ClipStart not set.");
                 clipEnd = player.Position;
                 int sliderposx = trackBarPlayer.Value * trackBarPlayer.Width / trackBarPlayer.Maximum;
                 Console.WriteLine("Slider pos: " + sliderposx);
@@ -213,6 +216,7 @@ namespace JVT
             if (player.Position < clipStart)
             {
                 Console.WriteLine("ERR: clip start Position is after clip end!!");
+                resetClipLabels();
             }
             else
             {
@@ -233,14 +237,16 @@ namespace JVT
                 Console.WriteLine("No clips to encode, count: " + clips.Count);
                 return;
             }
+            // TODO Move this clip name logic to clip encoder!!! DONT NEED IT HERE
             foreach(VideoClip clip in clips)
             {
                 MediaFile inputFile = new MediaFile { Filename = clip.filePath };
-                string outputFolder = "render\\";
-                string tempPath = clip.filePath;
+                string outputFolder =  Application.StartupPath + "\\render\\";
+                string tempPath = clip.OutputName;
 
                 // Generate unique name for each clip so we don't override if multiple clips from same video.
-                if (File.Exists(outputFolder + clip.filePath))
+                // Its overriding to first free name found for all clips now..
+                if (File.Exists(outputFolder + clip.OutputName))
                 {
                     Console.WriteLine("Found existing clip with same filename, generating new name..");
                     bool tryNextName = true;
@@ -248,6 +254,8 @@ namespace JVT
                     tempPath = counter.ToString() + "_" + clip.filePath;
                     while(tryNextName)
                     {
+                        bool nameUsedbyOtherClip = false;
+                        //Console.WriteLine("Trying name: " + outputFolder + tempPath);
                         if (File.Exists(outputFolder + tempPath))
                         {
                             counter++;
@@ -255,13 +263,31 @@ namespace JVT
                         }
                         else
                         {
-                            tryNextName = false;
-                            break;
+                            foreach (VideoClip clip2 in clips)
+                            {
+                                if (clip2.OutputName == tempPath)
+                                {
+                                   // Console.WriteLine("Clip name already taken by other clip on the list, trying next one..");
+                                    counter++;
+                                    tempPath = counter.ToString() + "_" + clip.filePath;
+                                    nameUsedbyOtherClip = true;
+                                    break;
+                                }
+                            }
+                            if(!nameUsedbyOtherClip)
+                            {
+                               //S Console.WriteLine("found free name: " + outputFolder + tempPath);
+                                tryNextName = false;
+                                break;
+                            }
                         }
                     }
                 }
-                clip.filePath = tempPath;
+                clip.OutputName = tempPath;
 
+
+                // Move this to clips list form for final confirm
+                /*
                 MediaFile outputFile = new MediaFile { Filename = outputFolder + clip.filePath };
                 TimeSpan clipLen = clip.End - clip.Start;
                 Console.WriteLine("Input: {0}, output: {1}", inputFile.Filename, outputFile.Filename);
@@ -276,37 +302,15 @@ namespace JVT
                     engine.ConversionCompleteEvent += Engine_ConversionCompleteEvent;
                     engine.Convert(inputFile, outputFile, options);
                 }
+                */
             }
-            clips.Clear();
+            FormClipList formClipList = new FormClipList(clips);
+            formClipList.Show();
+            // Gets passed by reference, clearing here clears the list passed to encoder too.
+            //clips.Clear();
         }
 
-        private void Engine_ConversionCompleteEvent(object sender, ConversionCompleteEventArgs e)
-        {
 
-            Console.WriteLine("\n------------\nConversion complete!\n------------");
-            Console.WriteLine("Bitrate: {0}", e.Bitrate);
-            Console.WriteLine("Fps: {0}", e.Fps);
-            Console.WriteLine("Frame: {0}", e.Frame);
-            Console.WriteLine("ProcessedDuration: {0}", e.ProcessedDuration);
-            Console.WriteLine("SizeKb: {0}", e.SizeKb);
-            Console.WriteLine("TotalDuration: {0}\n", e.TotalDuration);
-            MessageBox.Show("Conversion complete!\n"+
-                "Bitrate: " + e.Bitrate + "\n"+
-                "Fps: " + e.Fps + "\n"+
-                "SizeKb: " + e.SizeKb + "\n"+
-                "TotalDuration: " + e.TotalDuration);
-        }
-
-        private void Engine_ConvertProgressEvent(object sender, ConvertProgressEventArgs e)
-        {
-            Console.WriteLine("\n------------\nConverting...\n------------");
-            Console.WriteLine("Bitrate: {0}", e.Bitrate);
-            Console.WriteLine("Fps: {0}", e.Fps);
-            Console.WriteLine("Frame: {0}", e.Frame);
-            Console.WriteLine("ProcessedDuration: {0}", e.ProcessedDuration);
-            Console.WriteLine("SizeKb: {0}", e.SizeKb);
-            Console.WriteLine("TotalDuration: {0}\n", e.TotalDuration);
-        }
 
         private void Form1_DragDrop(object sender, DragEventArgs e)
         {
@@ -339,6 +343,14 @@ namespace JVT
             }
         }
 
+        private void resetClipLabels()
+        {
+            labelMark1.Location = new Point(12, 384);
+            labelMarkEnd.Location = new Point(771, 384);
+            clipEnd = TimeSpan.FromHours(1337);
+            clipStart = TimeSpan.FromHours(1337);
+        }
+
         private void ButtonAddClip_Click(object sender, EventArgs e)
         {
             if(clipEnd.TotalMilliseconds == 0  || clipStart.TotalMilliseconds == 0)
@@ -346,12 +358,9 @@ namespace JVT
                 MessageBox.Show("Clip end or start not set! \n Cancelling clip add.");
                 return;
             }
-            clips.Add(new VideoClip() {Start = clipStart, End = clipEnd, filePath = clipPath });
+            clips.Add(new VideoClip() {Start = clipStart, End = clipEnd, filePath = clipPath, OutputName = Path.GetFileName(clipPath) });
             //Reset the clip stuff.
-            labelMark1.Location = new Point(12, 384);
-            labelMarkEnd.Location = new Point(771, 384);
-            clipEnd = TimeSpan.Zero;
-            clipStart = TimeSpan.Zero;
+            resetClipLabels();
         }
     }
 }
