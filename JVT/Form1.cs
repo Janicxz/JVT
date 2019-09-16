@@ -12,11 +12,25 @@ using Mpv.NET.Player;
 using MediaToolkit;
 using MediaToolkit.Model;
 using MediaToolkit.Options;
+using System.IO;
 
 namespace JVT
 {
     public partial class Form1 : Form
     {
+        // TODO:
+        // Add file selection
+        // Add new page/window for render queue which lets you select the clips you want merged into single output video like simple video editor.
+        // Add encoding options
+        // Add multi clip support
+        // Add support to merging multiple videos into single one.
+        // Add volume button
+        // Multi channel audio merging? (if separate mic and game audio for example.)
+        // Youtube upload support with network interface select option?
+        // integration with OBS?
+        // Drag & Drop gets bugged after 3rd drag? something todo with form handle breaking or smth from MPV init?
+
+        List<VideoClip> clips = new List<VideoClip>();
         string dllPath = "lib\\mpv-1.dll";
         string clipPath = "test.mp4";
         TimeSpan clipStart;
@@ -32,18 +46,35 @@ namespace JVT
         private void Form1_Load(object sender, EventArgs e)
         {
             // Init
-            player = new MpvPlayer(panelPlayer.Handle, dllPath);
+            /*player = new MpvPlayer(panelPlayer.Handle, dllPath);
             player.Load(clipPath);
             player.Loop = true;
             player.Resume();
             player.MediaLoaded += Player_MediaLoaded;
             player.MediaPaused += Player_MediaPaused;
-            player.MediaResumed += Player_MediaResumed;
+            player.MediaResumed += Player_MediaResumed;*/
+            initPlayer();
+
+            labelMark1.BackColor = Color.Transparent;
+            labelMarkEnd.BackColor = Color.Transparent;
 
             timerTrackBarUpdate = new Timer();
             timerTrackBarUpdate.Interval = 100;
             timerTrackBarUpdate.Tick += TimerTrackBarUpdate_Tick;
             timerTrackBarUpdate.Start();
+        }
+
+        private void initPlayer()
+        {
+            if (player != null)
+                player.Dispose();
+            player = new MpvPlayer(panelPlayer.Handle, dllPath);
+            player.Load(clipPath);
+            player.MediaLoaded += Player_MediaLoaded;
+            player.MediaPaused += Player_MediaPaused;
+            player.MediaResumed += Player_MediaResumed;
+            player.Loop = true;
+            player.Resume();
         }
 
         private void Player_MediaResumed(object sender, EventArgs e)
@@ -55,7 +86,11 @@ namespace JVT
         private void Player_MediaPaused(object sender, EventArgs e)
         {
             Console.WriteLine("Playback paused.");
-           // timerTrackBarUpdate.Stop();
+            // timerTrackBarUpdate.Stop();
+            buttonPlayerStop.Invoke((Action)delegate
+            {
+                buttonPlayerStop.Text = "Resume";
+            });
         }
 
         private void TimerTrackBarUpdate_Tick(object sender, EventArgs e)
@@ -73,15 +108,10 @@ namespace JVT
             Console.WriteLine("Loaded media, duration: {0}",player.Duration.TotalMilliseconds);
             trackBarPlayer.Invoke((Action)delegate
             {
+                trackBarPlayer.Value = 0;
                 trackBarPlayer.Maximum = (int)player.Duration.TotalMilliseconds;
                 trackBarPlayer.Minimum = 0;
             });
-            /*hScrollBarPlayer.Invoke((Action)delegate
-            {
-                hScrollBarPlayer.Maximum = (int)player.Duration.TotalMilliseconds;
-                hScrollBarPlayer.Minimum = 0;
-            });*/
-
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
@@ -89,23 +119,10 @@ namespace JVT
              if(player != null) player.Dispose();
         }
 
-        bool playerPaused = false;
+        //bool playerPaused = false;
         private void ButtonPlayerStop_Click(object sender, EventArgs e)
         {
             togglePlayerPause();
-           // Console.WriteLine("Playing {0}", player.IsPlaying);
-           /* if (!playerPaused)
-            {
-                player.Pause();
-                buttonPlayerStop.Text = "Resume";
-                playerPaused = true;
-            }
-            else
-            {
-                player.Resume();
-                buttonPlayerStop.Text = "Pause";
-                playerPaused = false;
-            }*/
         }
 
         private void togglePlayerPause()
@@ -126,14 +143,6 @@ namespace JVT
                     buttonPlayerStop.Text = "Pause";
                 });
             }
-        }
-
-        private void HScrollBarPlayer_Scroll(object sender, ScrollEventArgs e)
-        {
-            timerTrackBarUpdate.Stop();
-            Console.WriteLine("scrolled");
-           // player.SeekAsync(TimeSpan.FromMilliseconds(e.NewValue));
-            timerTrackBarUpdate.Start();
         }
 
         private void Form1_KeyDown(object sender, KeyEventArgs e)
@@ -158,6 +167,7 @@ namespace JVT
             }
         }
 
+        // TODO: Make dragging scrollbar not jump around on timer ticks?
         private void TrackBarPlayer_Scroll(object sender, EventArgs e)
         {
             player.SeekAsync(TimeSpan.FromMilliseconds(trackBarPlayer.Value));
@@ -218,21 +228,56 @@ namespace JVT
         private void ButtonRender_Click(object sender, EventArgs e)
         {
             Console.WriteLine("Encoding clip..");
-            MediaFile inputFile = new MediaFile { Filename = clipPath };
-            MediaFile outputFile = new MediaFile { Filename = "render\\"+ clipPath };
-            TimeSpan clipLen = clipEnd - clipStart;
-            Console.WriteLine("Input: {0}, output: {1}", inputFile.Filename, outputFile.Filename);
-            using (Engine engine = new Engine())
+            if(clips.Count == 0)
             {
-                engine.GetMetadata(inputFile);
-                ConversionOptions options = new ConversionOptions();
-                options.CutMedia(clipStart, clipLen);
-                Console.WriteLine("start at: {0}, end at {1}, duration: {2}", clipStart, clipEnd, clipLen);
-
-                engine.ConvertProgressEvent += Engine_ConvertProgressEvent;
-                engine.ConversionCompleteEvent += Engine_ConversionCompleteEvent;
-                engine.Convert(inputFile, outputFile, options);
+                Console.WriteLine("No clips to encode, count: " + clips.Count);
+                return;
             }
+            foreach(VideoClip clip in clips)
+            {
+                MediaFile inputFile = new MediaFile { Filename = clip.filePath };
+                string outputFolder = "render\\";
+                string tempPath = clip.filePath;
+
+                // Generate unique name for each clip so we don't override if multiple clips from same video.
+                if (File.Exists(outputFolder + clip.filePath))
+                {
+                    Console.WriteLine("Found existing clip with same filename, generating new name..");
+                    bool tryNextName = true;
+                    int counter = 1;
+                    tempPath = counter.ToString() + "_" + clip.filePath;
+                    while(tryNextName)
+                    {
+                        if (File.Exists(outputFolder + tempPath))
+                        {
+                            counter++;
+                            tempPath = counter.ToString() + "_" + clip.filePath;
+                        }
+                        else
+                        {
+                            tryNextName = false;
+                            break;
+                        }
+                    }
+                }
+                clip.filePath = tempPath;
+
+                MediaFile outputFile = new MediaFile { Filename = outputFolder + clip.filePath };
+                TimeSpan clipLen = clip.End - clip.Start;
+                Console.WriteLine("Input: {0}, output: {1}", inputFile.Filename, outputFile.Filename);
+                using (Engine engine = new Engine())
+                {
+                    engine.GetMetadata(inputFile);
+                    ConversionOptions options = new ConversionOptions();
+                    options.CutMedia(clip.Start, clipLen);
+                    Console.WriteLine("start at: {0}, end at {1}, duration: {2}", clip.Start, clip.End, clipLen);
+
+                    engine.ConvertProgressEvent += Engine_ConvertProgressEvent;
+                    engine.ConversionCompleteEvent += Engine_ConversionCompleteEvent;
+                    engine.Convert(inputFile, outputFile, options);
+                }
+            }
+            clips.Clear();
         }
 
         private void Engine_ConversionCompleteEvent(object sender, ConversionCompleteEventArgs e)
@@ -245,6 +290,11 @@ namespace JVT
             Console.WriteLine("ProcessedDuration: {0}", e.ProcessedDuration);
             Console.WriteLine("SizeKb: {0}", e.SizeKb);
             Console.WriteLine("TotalDuration: {0}\n", e.TotalDuration);
+            MessageBox.Show("Conversion complete!\n"+
+                "Bitrate: " + e.Bitrate + "\n"+
+                "Fps: " + e.Fps + "\n"+
+                "SizeKb: " + e.SizeKb + "\n"+
+                "TotalDuration: " + e.TotalDuration);
         }
 
         private void Engine_ConvertProgressEvent(object sender, ConvertProgressEventArgs e)
@@ -256,6 +306,52 @@ namespace JVT
             Console.WriteLine("ProcessedDuration: {0}", e.ProcessedDuration);
             Console.WriteLine("SizeKb: {0}", e.SizeKb);
             Console.WriteLine("TotalDuration: {0}\n", e.TotalDuration);
+        }
+
+        private void Form1_DragDrop(object sender, DragEventArgs e)
+        {
+            string[] filePaths = (string[])e.Data.GetData(DataFormats.FileDrop, false);
+            //Console.WriteLine("Dragged file " + filePaths[0]);
+            clipPath = @filePaths[0];
+            initPlayer();
+            /*player.Dispose();
+
+            player = new MpvPlayer(panelPlayer.Handle, dllPath);
+            player.Load(@filePaths[0]);
+            player.Loop = true;
+            player.MediaLoaded += Player_MediaLoaded;
+            player.MediaPaused += Player_MediaPaused;
+            player.MediaResumed += Player_MediaResumed;
+            player.Resume();
+            clipPath = @filePaths[0];*/
+        }
+
+        private void Form1_DragEnter(object sender, DragEventArgs e)
+        {
+            //Console.WriteLine("Got drag enter ");
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                e.Effect = DragDropEffects.Copy;
+            }
+            else
+            {
+                e.Effect = DragDropEffects.None;
+            }
+        }
+
+        private void ButtonAddClip_Click(object sender, EventArgs e)
+        {
+            if(clipEnd.TotalMilliseconds == 0  || clipStart.TotalMilliseconds == 0)
+            {
+                MessageBox.Show("Clip end or start not set! \n Cancelling clip add.");
+                return;
+            }
+            clips.Add(new VideoClip() {Start = clipStart, End = clipEnd, filePath = clipPath });
+            //Reset the clip stuff.
+            labelMark1.Location = new Point(12, 384);
+            labelMarkEnd.Location = new Point(771, 384);
+            clipEnd = TimeSpan.Zero;
+            clipStart = TimeSpan.Zero;
         }
     }
 }
