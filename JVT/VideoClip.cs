@@ -10,6 +10,7 @@ namespace JVT
     {
         public string filePath;
         public string OutputName;
+        public bool Merge;
         public TimeSpan Start;
         public TimeSpan End;
         // Video quality / encoder settings?

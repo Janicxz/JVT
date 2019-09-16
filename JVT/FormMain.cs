@@ -8,11 +8,12 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-using Mpv.NET.Player;
 using MediaToolkit;
 using MediaToolkit.Model;
 using MediaToolkit.Options;
+
 using System.IO;
+using Vlc.DotNet.Forms;
 
 namespace JVT
 {
@@ -32,12 +33,13 @@ namespace JVT
         // Add 3rd form for rendering settings?
         // Add encoding status to clipencoder class so we can update UI in formclipslist when one of the encodes finishes.( ie, 1/3 done)
         // Finish merging clips functionality
+        // clean up, create load video function instead of this mess
         List<VideoClip> clips = new List<VideoClip>();
-        string dllPath = "lib\\mpv-1.dll";
-        string clipPath = Path.GetFullPath("test.mp4");
+        VlcControl vlcControlPlayer = new VlcControl();
+
+        string clipPath; //= Path.GetFullPath("test.mp4");
         TimeSpan clipStart = TimeSpan.FromHours(1337); // Use 1337 hours as unset value.
         TimeSpan clipEnd = TimeSpan.FromHours(1337);
-        MpvPlayer player;
         Timer timerTrackBarUpdate;
 
         public FormMain()
@@ -66,17 +68,69 @@ namespace JVT
             timerTrackBarUpdate.Start();
         }
 
+        private bool firstLoad = true;
         private void initPlayer()
         {
-            if (player != null)
-                player.Dispose();
-            player = new MpvPlayer(panelPlayer.Handle, dllPath);
-            player.Load(clipPath);
-            player.MediaLoaded += Player_MediaLoaded;
-            player.MediaPaused += Player_MediaPaused;
-            player.MediaResumed += Player_MediaResumed;
+            /*if(firstLoad)
+            {
+                if (player != null)
+                    player.Dispose();
+                player = new MpvPlayer(panelPlayer.Handle, dllPath);
+                //player = new MpvPlayer(dllPath);
+                //player.LogLevel = Mpv.NET.API.MpvLogLevel.Debug;
+                player.MediaLoaded += Player_MediaLoaded;
+                player.MediaPaused += Player_MediaPaused;
+                player.MediaResumed += Player_MediaResumed;
+                firstLoad = false;
+            }
+            //if (player != null)
+            //    player.Dispose();
+
+           // player.Load(clipPath);
+            player.API.Command("loadfile",clipPath);
+            Console.WriteLine("Property: " +player.API.GetPropertyLong("duration"));
             player.Loop = true;
             player.Resume();
+            System.Threading.Thread.Sleep(150);*/
+            vlcControlPlayer.BeginInit();
+            DirectoryInfo di = new DirectoryInfo(Application.StartupPath + "\\libvlc\\win-x86");
+            vlcControlPlayer.VlcLibDirectory = di;
+            //vlcControlPlayer.VlcMediaplayerOptions = new[] { "-vv"}; // verbose console output
+            vlcControlPlayer.EndInit();
+            vlcControlPlayer.Dock = DockStyle.Fill;
+            vlcControlPlayer.AllowDrop = false;
+            panelVlcPlayer.Controls.Add(vlcControlPlayer);
+            vlcControlPlayer.VlcMediaPlayer.PositionChanged += VlcMediaPlayer_PositionChanged;
+
+            //loadVideo(clipPath);
+        }
+
+
+        private void VlcMediaPlayer_PositionChanged(object sender, Vlc.DotNet.Core.VlcMediaPlayerPositionChangedEventArgs e)
+        {
+            float posperc =  e.NewPosition * 100;
+            //trackBarPlayer.Maximum = (int)vlcControlPlayer.GetCurrentMedia().Duration.TotalMilliseconds;
+            //Console.WriteLine("Max: " + (int)vlcControlPlayer.GetCurrentMedia().Duration.TotalMilliseconds);
+            //Console.WriteLine("Pos chnged: " + e.NewPosition + " % " + posperc);
+            float currentPositionMs = posperc * (trackBarPlayer.Maximum / 100);
+            //Console.WriteLine("currentPositionMs: " + currentPositionMs);
+            // Invoke or we crash on wrong thread
+            trackBarPlayer.Invoke((Action)delegate
+            {
+                trackBarPlayer.Value = (int)currentPositionMs;
+            });
+        }
+
+        private void loadVideo(string path)
+        {
+            Console.WriteLine("Loading video " + path);
+            vlcControlPlayer.SetMedia(new FileInfo(path), new[] { "input-repeat=65535" });
+            vlcControlPlayer.Play();
+            System.Threading.Thread.Sleep(150); // wait for load or else it returns 0
+            trackBarPlayer.Maximum = (int)vlcControlPlayer.GetCurrentMedia().Duration.TotalMilliseconds;
+            Console.WriteLine("Max: " + (int)vlcControlPlayer.GetCurrentMedia().Duration.TotalMilliseconds);
+
+            resetClipLabels();
         }
 
         private void Player_MediaResumed(object sender, EventArgs e)
@@ -97,28 +151,24 @@ namespace JVT
 
         private void TimerTrackBarUpdate_Tick(object sender, EventArgs e)
         {
-            //Console.WriteLine("timer Pos {0}, dur {1}", player.Position, player.Duration);
+           /* Console.WriteLine("timer Pos {0}, dur {1}", player.Position, player.Duration);
+            if(player.Duration.TotalSeconds == 0)
+            {
+                Console.WriteLine("bugged shit");
+               // firstLoad = true;
+               // initPlayer();
+            }
             trackBarPlayer.Invoke((Action)delegate
             {
                 trackBarPlayer.Value = (int)player.Position.TotalMilliseconds;
-                //Application.DoEvents();
-            });
+            });*/
         }
 
-        private void Player_MediaLoaded(object sender, EventArgs e)
-        {
-            Console.WriteLine("Loaded media, duration: {0}",player.Duration.TotalMilliseconds);
-            trackBarPlayer.Invoke((Action)delegate
-            {
-                trackBarPlayer.Value = 0;
-                trackBarPlayer.Maximum = (int)player.Duration.TotalMilliseconds;
-                trackBarPlayer.Minimum = 0;
-            });
-        }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-             if(player != null) player.Dispose();
+            //if(player != null) player.Dispose();
+            vlcControlPlayer.Stop();
         }
 
         //bool playerPaused = false;
@@ -129,7 +179,22 @@ namespace JVT
 
         private void togglePlayerPause()
         {
-            if (player.IsPlaying)
+            if(vlcControlPlayer.IsPlaying)
+            {
+                buttonPlayerStop.Invoke((Action)delegate
+                {
+                    buttonPlayerStop.Text = "Resume";
+                });
+            }
+            else
+            {
+                buttonPlayerStop.Invoke((Action)delegate
+                {
+                    buttonPlayerStop.Text = "Pause";
+                });
+            }
+            vlcControlPlayer.Pause();
+            /*if (player.IsPlaying)
             {
                 player.Pause();
                 buttonPlayerStop.Invoke((Action)delegate
@@ -144,20 +209,28 @@ namespace JVT
                 {
                     buttonPlayerStop.Text = "Pause";
                 });
-            }
+            }*/
         }
 
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
             Console.WriteLine("Keydown: {0}", e.KeyCode);
+            if ((int)vlcControlPlayer.VlcMediaPlayer.FramesPerSecond == 0) //nothing loaded yet, return
+                return;
+            int frameTime = 1000 / (int)vlcControlPlayer.VlcMediaPlayer.FramesPerSecond;
             switch (e.KeyCode)
             {
                 case Keys.Left:
-                    player.PreviousFrame();
+                    vlcControlPlayer.Time -= frameTime;
+                    if ((trackBarPlayer.Value - frameTime) > 0)
+                        trackBarPlayer.Value -= frameTime;
                     e.Handled = true;
                     break;
                 case Keys.Right:
-                    player.NextFrame();
+                    vlcControlPlayer.Time += frameTime;
+                    if ((trackBarPlayer.Value + frameTime) < trackBarPlayer.Maximum)
+                        trackBarPlayer.Value += frameTime;
+                    //player.NextFrame();
                     e.Handled = true;
                     break;
                 case Keys.Space:
@@ -172,28 +245,33 @@ namespace JVT
         // TODO: Make dragging scrollbar not jump around on timer ticks?
         private void TrackBarPlayer_Scroll(object sender, EventArgs e)
         {
-            player.SeekAsync(TimeSpan.FromMilliseconds(trackBarPlayer.Value));
+            int posMs = trackBarPlayer.Value;
+            float posPerc = ((float)trackBarPlayer.Value / (float)trackBarPlayer.Maximum);
+
+            vlcControlPlayer.VlcMediaPlayer.Position = posPerc;
+            //player.SeekAsync(TimeSpan.FromMilliseconds(trackBarPlayer.Value));
         }
 
         private void ButtonClipStart_Click(object sender, EventArgs e)
         {
-            Console.WriteLine("Clip start attempt: " + player.Position);
-            if (clipEnd == TimeSpan.FromHours(1337))
+            TimeSpan trackBarTimespan = TimeSpan.FromMilliseconds(trackBarPlayer.Value);
+            Console.WriteLine("Clip start attempt: " + trackBarTimespan);
+            /*if (clipEnd == TimeSpan.FromHours(1337))
             {
                 Console.WriteLine("ClipEnd not set.");
-                clipStart = player.Position;
+                clipStart = trackBarTimespan;
                 int sliderposx = trackBarPlayer.Value * trackBarPlayer.Width / trackBarPlayer.Maximum;
                 Console.WriteLine("Slider pos: " + sliderposx);
                 labelMark1.Left = sliderposx+15;
-            }
-            if(player.Position > clipEnd)
+            }*/
+            if(trackBarTimespan > clipEnd)
             {
                 Console.WriteLine("ERR: clip start Position is after clip end!!");
                 resetClipLabels();
             }
             else
             {
-                clipStart = player.Position;
+                clipStart = trackBarTimespan;
                 int sliderposx = trackBarPlayer.Value * trackBarPlayer.Width / trackBarPlayer.Maximum;
                 Console.WriteLine("Slider pos: " + sliderposx);
                 labelMark1.Left = sliderposx + 15;
@@ -203,24 +281,26 @@ namespace JVT
 
         private void ButtonClipEnd_Click(object sender, EventArgs e)
         {
-            Console.WriteLine("Clip end attempt: " + player.Position);
+            TimeSpan trackBarTimespan = TimeSpan.FromMilliseconds(trackBarPlayer.Value);
+
+            Console.WriteLine("Clip end attempt: " + trackBarTimespan);
             Console.WriteLine("start {0}, end {1}: ", clipStart, clipEnd);
-            if (clipStart == TimeSpan.FromHours(1337))
+            /*if (clipStart == TimeSpan.FromHours(1337))
             {
                 Console.WriteLine("ClipStart not set.");
-                clipEnd = player.Position;
+                clipEnd = trackBarTimespan;
                 int sliderposx = trackBarPlayer.Value * trackBarPlayer.Width / trackBarPlayer.Maximum;
                 Console.WriteLine("Slider pos: " + sliderposx);
                 labelMarkEnd.Left = sliderposx + 15;
-            }
-            if (player.Position < clipStart)
+            }*/
+            if (trackBarTimespan < clipStart)
             {
                 Console.WriteLine("ERR: clip start Position is after clip end!!");
                 resetClipLabels();
             }
             else
             {
-                clipEnd = player.Position;
+                clipEnd = trackBarTimespan;
                 int sliderposx = trackBarPlayer.Value * trackBarPlayer.Width / trackBarPlayer.Maximum;
                 Console.WriteLine("Slider pos: " + sliderposx);
                 labelMarkEnd.Left = sliderposx + 15;
@@ -235,6 +315,7 @@ namespace JVT
             if(clips.Count == 0)
             {
                 Console.WriteLine("No clips to encode, count: " + clips.Count);
+                MessageBox.Show("Add clips first to render.");
                 return;
             }
             // TODO Move this clip name logic to clip encoder!!! DONT NEED IT HERE
@@ -242,67 +323,45 @@ namespace JVT
             {
                 MediaFile inputFile = new MediaFile { Filename = clip.filePath };
                 string outputFolder =  Application.StartupPath + "\\render\\";
-                string tempPath = clip.OutputName;
+                string tempPath = outputFolder + clip.OutputName;//clip.OutputName;
 
                 // Generate unique name for each clip so we don't override if multiple clips from same video.
                 // Its overriding to first free name found for all clips now..
-                if (File.Exists(outputFolder + clip.OutputName))
+                Console.WriteLine("Found existing clip with same filename, generating new name..");
+                bool tryNextName = true;
+                int counter = 1;
+                tempPath = outputFolder + counter.ToString() + "_" + clip.OutputName;
+                while(tryNextName)
                 {
-                    Console.WriteLine("Found existing clip with same filename, generating new name..");
-                    bool tryNextName = true;
-                    int counter = 1;
-                    tempPath = counter.ToString() + "_" + clip.filePath;
-                    while(tryNextName)
+                    bool nameUsedbyOtherClip = false;
+                    //Console.WriteLine("Trying name: " + outputFolder + tempPath);
+                    if (File.Exists(tempPath))
                     {
-                        bool nameUsedbyOtherClip = false;
-                        //Console.WriteLine("Trying name: " + outputFolder + tempPath);
-                        if (File.Exists(outputFolder + tempPath))
+                        counter++;
+                        tempPath = outputFolder + counter.ToString() + "_" + clip.OutputName;
+                    }
+                    else
+                    {
+                        foreach (VideoClip clip2 in clips)
                         {
-                            counter++;
-                            tempPath = counter.ToString() + "_" + clip.filePath;
-                        }
-                        else
-                        {
-                            foreach (VideoClip clip2 in clips)
+                            if (clip2.OutputName == counter.ToString() + "_" + clip.OutputName)
                             {
-                                if (clip2.OutputName == tempPath)
-                                {
-                                   // Console.WriteLine("Clip name already taken by other clip on the list, trying next one..");
-                                    counter++;
-                                    tempPath = counter.ToString() + "_" + clip.filePath;
-                                    nameUsedbyOtherClip = true;
-                                    break;
-                                }
-                            }
-                            if(!nameUsedbyOtherClip)
-                            {
-                               //S Console.WriteLine("found free name: " + outputFolder + tempPath);
-                                tryNextName = false;
+                                // Console.WriteLine("Clip name already taken by other clip on the list, trying next one..");
+                                counter++;
+                                tempPath = outputFolder + counter.ToString() + "_" + clip.OutputName;
+                                nameUsedbyOtherClip = true;
                                 break;
                             }
                         }
+                        if(!nameUsedbyOtherClip)
+                        {
+                            //S Console.WriteLine("found free name: " + outputFolder + tempPath);
+                            tryNextName = false;
+                            clip.OutputName = counter.ToString() + "_" + clip.OutputName;
+                            break;
+                        }
                     }
                 }
-                clip.OutputName = tempPath;
-
-
-                // Move this to clips list form for final confirm
-                /*
-                MediaFile outputFile = new MediaFile { Filename = outputFolder + clip.filePath };
-                TimeSpan clipLen = clip.End - clip.Start;
-                Console.WriteLine("Input: {0}, output: {1}", inputFile.Filename, outputFile.Filename);
-                using (Engine engine = new Engine())
-                {
-                    engine.GetMetadata(inputFile);
-                    ConversionOptions options = new ConversionOptions();
-                    options.CutMedia(clip.Start, clipLen);
-                    Console.WriteLine("start at: {0}, end at {1}, duration: {2}", clip.Start, clip.End, clipLen);
-
-                    engine.ConvertProgressEvent += Engine_ConvertProgressEvent;
-                    engine.ConversionCompleteEvent += Engine_ConversionCompleteEvent;
-                    engine.Convert(inputFile, outputFile, options);
-                }
-                */
             }
             FormClipList formClipList = new FormClipList(clips);
             formClipList.Show();
@@ -317,17 +376,8 @@ namespace JVT
             string[] filePaths = (string[])e.Data.GetData(DataFormats.FileDrop, false);
             //Console.WriteLine("Dragged file " + filePaths[0]);
             clipPath = @filePaths[0];
-            initPlayer();
-            /*player.Dispose();
-
-            player = new MpvPlayer(panelPlayer.Handle, dllPath);
-            player.Load(@filePaths[0]);
-            player.Loop = true;
-            player.MediaLoaded += Player_MediaLoaded;
-            player.MediaPaused += Player_MediaPaused;
-            player.MediaResumed += Player_MediaResumed;
-            player.Resume();
-            clipPath = @filePaths[0];*/
+            loadVideo(clipPath);
+            //initPlayer();
         }
 
         private void Form1_DragEnter(object sender, DragEventArgs e)
@@ -345,21 +395,66 @@ namespace JVT
 
         private void resetClipLabels()
         {
-            labelMark1.Location = new Point(12, 384);
-            labelMarkEnd.Location = new Point(771, 384);
-            clipEnd = TimeSpan.FromHours(1337);
-            clipStart = TimeSpan.FromHours(1337);
+            labelMark1.Location = new Point(trackBarPlayer.Location.X, trackBarPlayer.Location.Y+20); // 12
+            labelMarkEnd.Location = new Point(trackBarPlayer.Location.X + trackBarPlayer.Width-20, trackBarPlayer.Location.Y+20); // 771
+            // Check if nothing is loaded into the player yet
+            if ((int)vlcControlPlayer.VlcMediaPlayer.FramesPerSecond == 0)
+                return;
+            clipEnd = vlcControlPlayer.GetCurrentMedia().Duration;
+            clipStart = TimeSpan.Zero;
         }
 
         private void ButtonAddClip_Click(object sender, EventArgs e)
         {
-            if(clipEnd.TotalMilliseconds == 0  || clipStart.TotalMilliseconds == 0)
+            /*if(clipEnd.TotalMilliseconds == 0)
             {
-                MessageBox.Show("Clip end or start not set! \n Cancelling clip add.");
-                return;
+                // MessageBox.Show("Clip end or start not set! \n Cancelling clip add.");
+                // return;
+                // Add full video file?
+                clipEnd = vlcControlPlayer.GetCurrentMedia().Duration;
             }
+            if(clipStart.TotalMilliseconds == 0)
+            {
+                clipStart = TimeSpan.Zero;
+            }*/
+            Console.WriteLine("Adding clip: {0}-{1} on {2}",clipStart,clipEnd, clipPath);
             clips.Add(new VideoClip() {Start = clipStart, End = clipEnd, filePath = clipPath, OutputName = Path.GetFileName(clipPath) });
             //Reset the clip stuff.
+            resetClipLabels();
+        }
+
+        private void LoadVideoToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog dialog = new OpenFileDialog();
+            dialog.Title = "Open video file";
+            //dialog.Filter = "Video files|*.*"
+            if(dialog.ShowDialog() == DialogResult.OK)
+            {
+                clipPath = dialog.FileName.ToString();
+                loadVideo(clipPath);
+                //initPlayer();
+                resetClipLabels();
+            }
+        }
+
+        private void ButtonMute_Click(object sender, EventArgs e)
+        {
+            if(vlcControlPlayer.Audio.Volume == 0)
+            {
+                vlcControlPlayer.Audio.Volume = 100;
+                buttonMute.Text = "Mute";
+            }
+            else
+            {
+                vlcControlPlayer.Audio.Volume = 0;
+                buttonMute.Text = "Unmute";
+            }
+        }
+
+        private void TrackBarPlayer_SizeChanged(object sender, EventArgs e)
+        {
+            // TODO
+            // Recalculate current clip location markers instead of resetting it
             resetClipLabels();
         }
     }

@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.panelPlayer = new System.Windows.Forms.Panel();
             this.buttonPlayerStop = new System.Windows.Forms.Button();
             this.trackBarPlayer = new System.Windows.Forms.TrackBar();
             this.labelMark1 = new System.Windows.Forms.Label();
@@ -37,21 +36,18 @@
             this.buttonRender = new System.Windows.Forms.Button();
             this.labelMarkEnd = new System.Windows.Forms.Label();
             this.buttonAddClip = new System.Windows.Forms.Button();
+            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
+            this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.loadVideoToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.panelVlcPlayer = new System.Windows.Forms.Panel();
+            this.buttonMute = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarPlayer)).BeginInit();
+            this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // panelPlayer
-            // 
-            this.panelPlayer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.panelPlayer.Location = new System.Drawing.Point(0, 33);
-            this.panelPlayer.Name = "panelPlayer";
-            this.panelPlayer.Size = new System.Drawing.Size(800, 325);
-            this.panelPlayer.TabIndex = 0;
             // 
             // buttonPlayerStop
             // 
+            this.buttonPlayerStop.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonPlayerStop.Location = new System.Drawing.Point(343, 415);
             this.buttonPlayerStop.Name = "buttonPlayerStop";
             this.buttonPlayerStop.Size = new System.Drawing.Size(75, 23);
@@ -72,9 +68,12 @@
             this.trackBarPlayer.TabIndex = 3;
             this.trackBarPlayer.TickStyle = System.Windows.Forms.TickStyle.None;
             this.trackBarPlayer.Scroll += new System.EventHandler(this.TrackBarPlayer_Scroll);
+            this.trackBarPlayer.SizeChanged += new System.EventHandler(this.TrackBarPlayer_SizeChanged);
             // 
             // labelMark1
             // 
+            this.labelMark1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.labelMark1.AutoSize = true;
             this.labelMark1.BackColor = System.Drawing.Color.Transparent;
             this.labelMark1.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -87,6 +86,7 @@
             // 
             // buttonClipStart
             // 
+            this.buttonClipStart.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonClipStart.Location = new System.Drawing.Point(90, 415);
             this.buttonClipStart.Name = "buttonClipStart";
             this.buttonClipStart.Size = new System.Drawing.Size(75, 23);
@@ -98,6 +98,7 @@
             // 
             // buttonClipEnd
             // 
+            this.buttonClipEnd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonClipEnd.Location = new System.Drawing.Point(188, 415);
             this.buttonClipEnd.Name = "buttonClipEnd";
             this.buttonClipEnd.Size = new System.Drawing.Size(75, 23);
@@ -109,6 +110,7 @@
             // 
             // buttonRender
             // 
+            this.buttonRender.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonRender.Location = new System.Drawing.Point(631, 415);
             this.buttonRender.Name = "buttonRender";
             this.buttonRender.Size = new System.Drawing.Size(75, 23);
@@ -120,6 +122,8 @@
             // 
             // labelMarkEnd
             // 
+            this.labelMarkEnd.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.labelMarkEnd.AutoSize = true;
             this.labelMarkEnd.BackColor = System.Drawing.Color.Transparent;
             this.labelMarkEnd.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -131,6 +135,7 @@
             // 
             // buttonAddClip
             // 
+            this.buttonAddClip.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonAddClip.Location = new System.Drawing.Point(142, 388);
             this.buttonAddClip.Name = "buttonAddClip";
             this.buttonAddClip.Size = new System.Drawing.Size(75, 23);
@@ -139,12 +144,60 @@
             this.buttonAddClip.UseVisualStyleBackColor = true;
             this.buttonAddClip.Click += new System.EventHandler(this.ButtonAddClip_Click);
             // 
-            // Form1
+            // menuStrip1
+            // 
+            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.fileToolStripMenuItem});
+            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
+            this.menuStrip1.Name = "menuStrip1";
+            this.menuStrip1.Size = new System.Drawing.Size(800, 24);
+            this.menuStrip1.TabIndex = 10;
+            this.menuStrip1.Text = "menuStrip1";
+            // 
+            // fileToolStripMenuItem
+            // 
+            this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.loadVideoToolStripMenuItem});
+            this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
+            this.fileToolStripMenuItem.Text = "File";
+            // 
+            // loadVideoToolStripMenuItem
+            // 
+            this.loadVideoToolStripMenuItem.Name = "loadVideoToolStripMenuItem";
+            this.loadVideoToolStripMenuItem.Size = new System.Drawing.Size(133, 22);
+            this.loadVideoToolStripMenuItem.Text = "Load Video";
+            this.loadVideoToolStripMenuItem.Click += new System.EventHandler(this.LoadVideoToolStripMenuItem_Click);
+            // 
+            // panelVlcPlayer
+            // 
+            this.panelVlcPlayer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.panelVlcPlayer.Location = new System.Drawing.Point(12, 27);
+            this.panelVlcPlayer.Name = "panelVlcPlayer";
+            this.panelVlcPlayer.Size = new System.Drawing.Size(776, 331);
+            this.panelVlcPlayer.TabIndex = 12;
+            // 
+            // buttonMute
+            // 
+            this.buttonMute.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonMute.Location = new System.Drawing.Point(540, 416);
+            this.buttonMute.Name = "buttonMute";
+            this.buttonMute.Size = new System.Drawing.Size(75, 23);
+            this.buttonMute.TabIndex = 13;
+            this.buttonMute.Text = "Mute";
+            this.buttonMute.UseVisualStyleBackColor = true;
+            this.buttonMute.Click += new System.EventHandler(this.ButtonMute_Click);
+            // 
+            // FormMain
             // 
             this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 453);
+            this.Controls.Add(this.buttonMute);
+            this.Controls.Add(this.panelVlcPlayer);
             this.Controls.Add(this.buttonAddClip);
             this.Controls.Add(this.labelMarkEnd);
             this.Controls.Add(this.buttonRender);
@@ -153,9 +206,10 @@
             this.Controls.Add(this.labelMark1);
             this.Controls.Add(this.trackBarPlayer);
             this.Controls.Add(this.buttonPlayerStop);
-            this.Controls.Add(this.panelPlayer);
+            this.Controls.Add(this.menuStrip1);
             this.KeyPreview = true;
-            this.Name = "Form1";
+            this.MainMenuStrip = this.menuStrip1;
+            this.Name = "FormMain";
             this.Text = "JVT";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
@@ -163,14 +217,14 @@
             this.DragEnter += new System.Windows.Forms.DragEventHandler(this.Form1_DragEnter);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Form1_KeyDown);
             ((System.ComponentModel.ISupportInitialize)(this.trackBarPlayer)).EndInit();
+            this.menuStrip1.ResumeLayout(false);
+            this.menuStrip1.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
         }
 
         #endregion
-
-        private System.Windows.Forms.Panel panelPlayer;
         private System.Windows.Forms.Button buttonPlayerStop;
         private System.Windows.Forms.TrackBar trackBarPlayer;
         private System.Windows.Forms.Label labelMark1;
@@ -179,6 +233,11 @@
         private System.Windows.Forms.Button buttonRender;
         private System.Windows.Forms.Label labelMarkEnd;
         private System.Windows.Forms.Button buttonAddClip;
+        private System.Windows.Forms.MenuStrip menuStrip1;
+        private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem loadVideoToolStripMenuItem;
+        private System.Windows.Forms.Panel panelVlcPlayer;
+        private System.Windows.Forms.Button buttonMute;
     }
 }
 
