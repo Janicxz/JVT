@@ -87,7 +87,7 @@
             // buttonClipStart
             // 
             this.buttonClipStart.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonClipStart.Location = new System.Drawing.Point(90, 415);
+            this.buttonClipStart.Location = new System.Drawing.Point(27, 415);
             this.buttonClipStart.Name = "buttonClipStart";
             this.buttonClipStart.Size = new System.Drawing.Size(75, 23);
             this.buttonClipStart.TabIndex = 5;
@@ -99,7 +99,7 @@
             // buttonClipEnd
             // 
             this.buttonClipEnd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonClipEnd.Location = new System.Drawing.Point(188, 415);
+            this.buttonClipEnd.Location = new System.Drawing.Point(108, 415);
             this.buttonClipEnd.Name = "buttonClipEnd";
             this.buttonClipEnd.Size = new System.Drawing.Size(75, 23);
             this.buttonClipEnd.TabIndex = 6;
@@ -111,12 +111,12 @@
             // buttonRender
             // 
             this.buttonRender.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonRender.Location = new System.Drawing.Point(631, 415);
+            this.buttonRender.Location = new System.Drawing.Point(635, 415);
             this.buttonRender.Name = "buttonRender";
-            this.buttonRender.Size = new System.Drawing.Size(75, 23);
+            this.buttonRender.Size = new System.Drawing.Size(94, 24);
             this.buttonRender.TabIndex = 7;
             this.buttonRender.TabStop = false;
-            this.buttonRender.Text = "Render clips";
+            this.buttonRender.Text = "Encoder";
             this.buttonRender.UseVisualStyleBackColor = true;
             this.buttonRender.Click += new System.EventHandler(this.ButtonRender_Click);
             // 
@@ -136,7 +136,7 @@
             // buttonAddClip
             // 
             this.buttonAddClip.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonAddClip.Location = new System.Drawing.Point(142, 388);
+            this.buttonAddClip.Location = new System.Drawing.Point(189, 415);
             this.buttonAddClip.Name = "buttonAddClip";
             this.buttonAddClip.Size = new System.Drawing.Size(75, 23);
             this.buttonAddClip.TabIndex = 9;
@@ -186,7 +186,7 @@
             this.buttonMute.Name = "buttonMute";
             this.buttonMute.Size = new System.Drawing.Size(75, 23);
             this.buttonMute.TabIndex = 13;
-            this.buttonMute.Text = "Mute";
+            this.buttonMute.Text = "Mute audio";
             this.buttonMute.UseVisualStyleBackColor = true;
             this.buttonMute.Click += new System.EventHandler(this.ButtonMute_Click);
             // 

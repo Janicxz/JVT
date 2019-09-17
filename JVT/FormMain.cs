@@ -14,6 +14,7 @@ using MediaToolkit.Options;
 
 using System.IO;
 using Vlc.DotNet.Forms;
+using System.Threading;
 
 namespace JVT
 {
@@ -44,7 +45,7 @@ namespace JVT
         string clipPath; //= Path.GetFullPath("test.mp4");
         TimeSpan clipStart = TimeSpan.FromHours(1337); // Use 1337 hours as unset value.
         TimeSpan clipEnd = TimeSpan.FromHours(1337);
-        Timer timerTrackBarUpdate;
+        System.Windows.Forms.Timer timerTrackBarUpdate;
 
         public FormMain()
         {
@@ -66,13 +67,13 @@ namespace JVT
             labelMark1.BackColor = Color.Transparent;
             labelMarkEnd.BackColor = Color.Transparent;
 
-            timerTrackBarUpdate = new Timer();
+            timerTrackBarUpdate = new System.Windows.Forms.Timer();
             timerTrackBarUpdate.Interval = 100;
             timerTrackBarUpdate.Tick += TimerTrackBarUpdate_Tick;
             timerTrackBarUpdate.Start();
         }
 
-        private bool firstLoad = true;
+        //private bool firstLoad = true;
         private void initPlayer()
         {
             /*if(firstLoad)
@@ -118,9 +119,15 @@ namespace JVT
             //Console.WriteLine("Pos chnged: " + e.NewPosition + " % " + posperc);
             float currentPositionMs = posperc * (trackBarPlayer.Maximum / 100);
             //Console.WriteLine("currentPositionMs: " + currentPositionMs);
+            //Console.WriteLine("trackbar value: " + trackBarPlayer.Value);
+
             // Invoke or we crash on wrong thread
             trackBarPlayer.Invoke((Action)delegate
             {
+                // This should be done in vlc video loaded event or something
+                trackBarPlayer.Maximum = (int)vlcControlPlayer.GetCurrentMedia().Duration.TotalMilliseconds;
+                //Console.WriteLine("Max: " + (int)vlcControlPlayer.GetCurrentMedia().Duration.TotalMilliseconds);
+
                 if (currentPositionMs < 0)
                     currentPositionMs = 0;
                 trackBarPlayer.Value = (int)currentPositionMs;
@@ -130,11 +137,13 @@ namespace JVT
         private void loadVideo(string path)
         {
             Console.WriteLine("Loading video " + path);
-            vlcControlPlayer.SetMedia(new FileInfo(path), new[] { "input-repeat=65535" });
-            vlcControlPlayer.Play();
-            System.Threading.Thread.Sleep(150); // wait for load or else it returns 0
-            trackBarPlayer.Maximum = (int)vlcControlPlayer.GetCurrentMedia().Duration.TotalMilliseconds;
-            Console.WriteLine("Max: " + (int)vlcControlPlayer.GetCurrentMedia().Duration.TotalMilliseconds);
+           // vlcControlPlayer.SetMedia(new FileInfo(path), new[] { "input-repeat=65535" });
+          //  vlcControlPlayer.Play(); // This needs to be done outside main thread or the program can freeze
+            // https://github.com/ZeBobo5/Vlc.DotNet/wiki/Vlc.DotNet-freezes-(don't-call-Vlc.DotNet-from-a-Vlc.DotNet-callback)
+            ThreadPool.QueueUserWorkItem(a => vlcControlPlayer.Play(new FileInfo(path), new[] { "input-repeat=65535" }));
+            //System.Threading.Thread.Sleep(150); // wait for load or else it returns 0
+            //trackBarPlayer.Maximum = (int)vlcControlPlayer.GetCurrentMedia().Duration.TotalMilliseconds;
+            //Console.WriteLine("Video duration: " + (int)vlcControlPlayer.GetCurrentMedia().Duration.TotalMilliseconds);
 
             resetClipLabels();
         }
@@ -174,7 +183,8 @@ namespace JVT
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             //if(player != null) player.Dispose();
-            vlcControlPlayer.Stop();
+            // Needs to be called from different thread or it may deadlock
+            ThreadPool.QueueUserWorkItem(a => vlcControlPlayer.Stop());
         }
 
         //bool playerPaused = false;
@@ -369,6 +379,8 @@ namespace JVT
                     }
                 }
             }
+            buttonPlayerStop.Text = "Resume";
+            vlcControlPlayer.SetPause(true);
             FormClipList formClipList = new FormClipList(clips);
             formClipList.Show();
             // Gets passed by reference, clearing here clears the list passed to encoder too.
@@ -423,8 +435,15 @@ namespace JVT
             {
                 clipStart = TimeSpan.Zero;
             }*/
+            if(vlcControlPlayer.GetCurrentMedia() == null)
+            {
+                Console.WriteLine("No video loaded yet! Can't add a clip.");
+                MessageBox.Show("No video loaded yet! Adding clip cancelled.");
+                return;
+            }
+
             Console.WriteLine("Adding clip: {0}-{1} on {2}",clipStart,clipEnd, clipPath);
-            Console.WriteLine("audio tracks len: " + vlcControlPlayer.GetCurrentMedia().Tracks.Length);
+            Console.WriteLine("audio tracks count: " + vlcControlPlayer.GetCurrentMedia().Tracks.Length);
             bool multiTrackAudio = false;
             if (vlcControlPlayer.GetCurrentMedia().Tracks.Length > 2)
                 multiTrackAudio = true;

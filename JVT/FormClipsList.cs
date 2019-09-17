@@ -13,6 +13,7 @@ namespace JVT
     public partial class FormClipList : Form
     {
         private List<VideoClip> clips;
+        private int clipsEncodeCount;
         ClipEncoder encoder;
         public FormClipList(List<VideoClip> clipsList)
         {
@@ -20,7 +21,7 @@ namespace JVT
             clips = clipsList;
             encoder = new ClipEncoder();
             encoder.EncodingStatusChanged += Encoder_EncodingStatusChanged;
-            progressBarEncoder.Maximum = clips.Count()+1;
+            //progressBarEncoder.Maximum = clips.Count()+1;
 
             comboBoxResolution.SelectedIndex = 0;
             comboBoxBitrate.SelectedIndex = 0;
@@ -29,12 +30,25 @@ namespace JVT
 
         private void Encoder_EncodingStatusChanged(int ClipsEncoded, bool Finished)
         {
-            progressBarEncoder.Value = ClipsEncoded;
-            if(Finished)
+            progressBarEncoder.Invoke((Action)delegate
+            {
+                progressBarEncoder.Value = ClipsEncoded;
+
+            });
+            labelProgress.Invoke((Action)delegate
+            {
+                labelProgress.Text = String.Format("Progress: {0}/{1}", ClipsEncoded, clipsEncodeCount);
+            });
+            
+            //progressBarEncoder.Value = ClipsEncoded;
+            if (Finished)
             {
                 MessageBox.Show("Encoding finished!");
-                clips.Clear();
-                this.Close();
+                this.Invoke((Action)delegate
+                {
+                    clips.Clear();
+                    this.Close();
+                });
             }
         }
 
@@ -50,6 +64,7 @@ namespace JVT
 
         private void ButtonEncode_Click(object sender, EventArgs e)
         {
+            bool addedMergeClip = false;
             foreach(DataGridViewRow row in dataGridViewClips.Rows)
             {
                 foreach (VideoClip clip in clips)
@@ -59,6 +74,11 @@ namespace JVT
                         if (clip.OutputName == (string)row.Cells["outputFilename"].Value)
                         {
                             clip.Merge = true;
+                            if(!addedMergeClip)
+                            {
+                                clipsEncodeCount++;
+                                addedMergeClip = true;
+                            }
                         }
                     }
                     if ((bool)row.Cells["ColumnMicTrack"].Value)
@@ -75,6 +95,7 @@ namespace JVT
                     if (clip.OutputName == (string)row.Cells["outputFilename"].Value)
                     {
                         clip.Encode = (bool)row.Cells["Encode"].Value;
+                        clipsEncodeCount++;
                     }
                 }
             }
@@ -92,7 +113,12 @@ namespace JVT
                 return;
             }
             Console.WriteLine("Passing settings: {0}x{1} {2}kbps {3}fps", cfg.Width, cfg.Height, cfg.Bitrate, cfg.FPS);
-            encoder.Encode(clips, cfg);
+            // run this in a separate thread so we don't freeze the UI
+            buttonEncode.Enabled = false;
+            buttonEncode.Text = "Encoding..";
+            progressBarEncoder.Maximum = clipsEncodeCount;
+            Task.Run(() => encoder.Encode(clips, cfg));
+            //encoder.Encode(clips, cfg);
         }
     }
 }

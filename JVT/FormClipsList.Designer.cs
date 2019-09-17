@@ -29,6 +29,13 @@
         private void InitializeComponent()
         {
             this.dataGridViewClips = new System.Windows.Forms.DataGridView();
+            this.Encode = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+            this.ColumnVolume = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ColumnMicTrack = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+            this.Merge = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+            this.outputFilename = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.clipStart = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.clipEnd = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.buttonEncode = new System.Windows.Forms.Button();
             this.progressBarEncoder = new System.Windows.Forms.ProgressBar();
             this.comboBoxResolution = new System.Windows.Forms.ComboBox();
@@ -37,13 +44,7 @@
             this.labelRes = new System.Windows.Forms.Label();
             this.labelBitrate = new System.Windows.Forms.Label();
             this.labelFps = new System.Windows.Forms.Label();
-            this.Encode = new System.Windows.Forms.DataGridViewCheckBoxColumn();
-            this.ColumnVolume = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.ColumnMicTrack = new System.Windows.Forms.DataGridViewCheckBoxColumn();
-            this.Merge = new System.Windows.Forms.DataGridViewCheckBoxColumn();
-            this.outputFilename = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.clipStart = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.clipEnd = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.labelProgress = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewClips)).BeginInit();
             this.SuspendLayout();
             // 
@@ -66,9 +67,46 @@
             this.dataGridViewClips.Size = new System.Drawing.Size(776, 341);
             this.dataGridViewClips.TabIndex = 0;
             // 
+            // Encode
+            // 
+            this.Encode.HeaderText = "Encode";
+            this.Encode.Name = "Encode";
+            // 
+            // ColumnVolume
+            // 
+            this.ColumnVolume.HeaderText = "Clip Volume (0-250)";
+            this.ColumnVolume.Name = "ColumnVolume";
+            // 
+            // ColumnMicTrack
+            // 
+            this.ColumnMicTrack.HeaderText = "Include mic audio track";
+            this.ColumnMicTrack.Name = "ColumnMicTrack";
+            // 
+            // Merge
+            // 
+            this.Merge.HeaderText = "Merge to single video";
+            this.Merge.Name = "Merge";
+            // 
+            // outputFilename
+            // 
+            this.outputFilename.HeaderText = "Clip filename";
+            this.outputFilename.Name = "outputFilename";
+            // 
+            // clipStart
+            // 
+            this.clipStart.HeaderText = "Clip start";
+            this.clipStart.Name = "clipStart";
+            this.clipStart.ReadOnly = true;
+            // 
+            // clipEnd
+            // 
+            this.clipEnd.HeaderText = "Clip end";
+            this.clipEnd.Name = "clipEnd";
+            this.clipEnd.ReadOnly = true;
+            // 
             // buttonEncode
             // 
-            this.buttonEncode.Location = new System.Drawing.Point(329, 387);
+            this.buttonEncode.Location = new System.Drawing.Point(336, 415);
             this.buttonEncode.Name = "buttonEncode";
             this.buttonEncode.Size = new System.Drawing.Size(75, 23);
             this.buttonEncode.TabIndex = 1;
@@ -78,7 +116,7 @@
             // 
             // progressBarEncoder
             // 
-            this.progressBarEncoder.Location = new System.Drawing.Point(318, 416);
+            this.progressBarEncoder.Location = new System.Drawing.Point(325, 386);
             this.progressBarEncoder.Name = "progressBarEncoder";
             this.progressBarEncoder.Size = new System.Drawing.Size(100, 23);
             this.progressBarEncoder.TabIndex = 2;
@@ -143,48 +181,20 @@
             this.labelFps.TabIndex = 8;
             this.labelFps.Text = "Framerate";
             // 
-            // Encode
+            // labelProgress
             // 
-            this.Encode.HeaderText = "Encode";
-            this.Encode.Name = "Encode";
-            // 
-            // ColumnVolume
-            // 
-            this.ColumnVolume.HeaderText = "Clip Volume (0-250)";
-            this.ColumnVolume.Name = "ColumnVolume";
-            // 
-            // ColumnMicTrack
-            // 
-            this.ColumnMicTrack.HeaderText = "Include mic audio track";
-            this.ColumnMicTrack.Name = "ColumnMicTrack";
-            // 
-            // Merge
-            // 
-            this.Merge.HeaderText = "Merge to single video";
-            this.Merge.Name = "Merge";
-            // 
-            // outputFilename
-            // 
-            this.outputFilename.HeaderText = "Clip filename";
-            this.outputFilename.Name = "outputFilename";
-            // 
-            // clipStart
-            // 
-            this.clipStart.HeaderText = "Clip start";
-            this.clipStart.Name = "clipStart";
-            this.clipStart.ReadOnly = true;
-            // 
-            // clipEnd
-            // 
-            this.clipEnd.HeaderText = "Clip end";
-            this.clipEnd.Name = "clipEnd";
-            this.clipEnd.ReadOnly = true;
+            this.labelProgress.AutoSize = true;
+            this.labelProgress.Location = new System.Drawing.Point(356, 370);
+            this.labelProgress.Name = "labelProgress";
+            this.labelProgress.Size = new System.Drawing.Size(0, 13);
+            this.labelProgress.TabIndex = 9;
             // 
             // FormClipList
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.labelProgress);
             this.Controls.Add(this.labelFps);
             this.Controls.Add(this.labelBitrate);
             this.Controls.Add(this.labelRes);
@@ -221,5 +231,6 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn outputFilename;
         private System.Windows.Forms.DataGridViewTextBoxColumn clipStart;
         private System.Windows.Forms.DataGridViewTextBoxColumn clipEnd;
+        private System.Windows.Forms.Label labelProgress;
     }
 }
