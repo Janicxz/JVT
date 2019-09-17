@@ -34,6 +34,10 @@ namespace JVT
         // Add encoding status to clipencoder class so we can update UI in formclipslist when one of the encodes finishes.( ie, 1/3 done)
         // Finish merging clips functionality
         // clean up, create load video function instead of this mess
+        // https://blog.nytsoi.net/2017/12/31/ffmpeg-combining-audio-tracks add support for combining mic track
+        // ffmpeg -i 'input.mkv' -filter_complex '[0:a:1]volume=0.1[l];[0:a:0][l]amerge=inputs=2[a]' -map '0:v:0' -map '[a]' -c:v copy -c:a libmp3lame -q:a 3 -ac 2 'output.mp4'
+        // Add reordering clips on the clips manager
+
         List<VideoClip> clips = new List<VideoClip>();
         VlcControl vlcControlPlayer = new VlcControl();
 
@@ -117,6 +121,8 @@ namespace JVT
             // Invoke or we crash on wrong thread
             trackBarPlayer.Invoke((Action)delegate
             {
+                if (currentPositionMs < 0)
+                    currentPositionMs = 0;
                 trackBarPlayer.Value = (int)currentPositionMs;
             });
         }
@@ -418,7 +424,18 @@ namespace JVT
                 clipStart = TimeSpan.Zero;
             }*/
             Console.WriteLine("Adding clip: {0}-{1} on {2}",clipStart,clipEnd, clipPath);
-            clips.Add(new VideoClip() {Start = clipStart, End = clipEnd, filePath = clipPath, OutputName = Path.GetFileName(clipPath) });
+            Console.WriteLine("audio tracks len: " + vlcControlPlayer.GetCurrentMedia().Tracks.Length);
+            bool multiTrackAudio = false;
+            if (vlcControlPlayer.GetCurrentMedia().Tracks.Length > 2)
+                multiTrackAudio = true;
+            /*foreach(Vlc.DotNet.Core.Interops.MediaTrack track in vlcControlPlayer.GetCurrentMedia().Tracks)
+            {
+                Console.WriteLine(track);
+                // Video
+                // System sound
+                // Microphone
+            }*/
+            clips.Add(new VideoClip() {Start = clipStart, End = clipEnd, filePath = clipPath, OutputName = Path.GetFileName(clipPath), MultiTrackAudio = multiTrackAudio, Encode = true, MergeAudioTracks = false, Volume = 100 });
             //Reset the clip stuff.
             resetClipLabels();
         }

@@ -11,8 +11,11 @@ namespace JVT
         public string filePath;
         public string OutputName;
         public bool Merge;
+        public bool Encode;
+        public bool MultiTrackAudio;
+        public bool MergeAudioTracks;
+        public int Volume;
         public TimeSpan Start;
         public TimeSpan End;
-        // Video quality / encoder settings?
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -58,10 +59,19 @@ namespace JVT
                     options.VideoSize = VideoSize.Custom;
                     options.CutMedia(clip.Start, clipLen);
                     Console.WriteLine("start at: {0}, end at {1}, duration: {2}", clip.Start, clip.End, clipLen);
-
                     engine.ConvertProgressEvent += Engine_ConvertProgressEvent;
                     engine.ConversionCompleteEvent += Engine_ConversionCompleteEvent;
-                    engine.Convert(inputFile, outputFile, options);
+                    if (clip.MergeAudioTracks)
+                    {
+                        float clipVolume = (float)clip.Volume / 100;
+                        string ffmpegCommand = string.Format("-i \"{0}\" -filter_complex \"[0:a:0]volume={8}[a1];[0:a:1][a1]amerge=inputs=2[a]\" -map 0:v:0 -map \"[a]\" -c:v libx264 -preset medium -maxrate {1}K -vf scale={2}x{3} -framerate {4} -ac 2 -c:a aac -b:a 384k -ss {5} -t {6} \"{7}\"", inputFile.Filename, encodeSettings.Bitrate, encodeSettings.Width, encodeSettings.Height, encodeSettings.FPS,clip.Start,clip.End, outputFile.Filename, clipVolume.ToString(CultureInfo.InvariantCulture));
+                        Console.WriteLine("Merging audio with cmd: " + ffmpegCommand);
+                        engine.CustomCommand(ffmpegCommand);
+                    }
+                    else
+                    {
+                        engine.Convert(inputFile, outputFile, options);
+                    }
                     EncodingStatusChanged(clipNum, false);
                     clipNum++;
                 }

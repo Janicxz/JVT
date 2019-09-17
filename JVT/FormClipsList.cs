@@ -42,7 +42,9 @@ namespace JVT
         {
             foreach(VideoClip clip in clips)
             {
-                dataGridViewClips.Rows.Add(new object[] {true,false,clip.OutputName,clip.Start,clip.End});
+                dataGridViewClips.Rows.Add(new object[] {true,clip.Volume,clip.MultiTrackAudio,false,clip.OutputName,clip.Start,clip.End});
+                if (!clip.MultiTrackAudio)
+                    dataGridViewClips.Rows[dataGridViewClips.Rows.Count-1].Cells["ColumnMicTrack"].ReadOnly = true;
             }
         }
 
@@ -50,14 +52,25 @@ namespace JVT
         {
             foreach(DataGridViewRow row in dataGridViewClips.Rows)
             {
-                if((bool)row.Cells["Merge"].Value)
+                foreach (VideoClip clip in clips)
                 {
-                    foreach (VideoClip clip in clips)
+                    if ((bool)row.Cells["Merge"].Value)
                     {
-                        if(clip.OutputName == (string)row.Cells["outputFilename"].Value)
+                        if (clip.OutputName == (string)row.Cells["outputFilename"].Value)
                         {
                             clip.Merge = true;
                         }
+                    }
+                    if ((bool)row.Cells["ColumnMicTrack"].Value)
+                    {
+                        if (clip.OutputName == (string)row.Cells["outputFilename"].Value)
+                        {
+                            clip.MergeAudioTracks = true;
+                        }
+                    }
+                    if (clip.OutputName == (string)row.Cells["outputFilename"].Value)
+                    {
+                        clip.Volume = Int32.Parse(row.Cells["ColumnVolume"].Value.ToString());
                     }
                 }
             }
