@@ -66,11 +66,13 @@ namespace JVT
                         float clipVolume = (float)clip.Volume / 100;
                         string ffmpegCommand = string.Format("-i \"{0}\" -filter_complex \"[0:a:0]volume={8}[a1];[0:a:1][a1]amerge=inputs=2[a]\" -map 0:v:0 -map \"[a]\" -c:v libx264 -preset medium -maxrate {1}K -vf scale={2}x{3} -framerate {4} -ac 2 -c:a aac -b:a 384k -ss {5} -t {6} \"{7}\"", inputFile.Filename, encodeSettings.Bitrate, encodeSettings.Width, encodeSettings.Height, encodeSettings.FPS,clip.Start,clip.End, outputFile.Filename, clipVolume.ToString(CultureInfo.InvariantCulture));
                         Console.WriteLine("Merging audio with cmd: " + ffmpegCommand);
-                        engine.CustomCommand(ffmpegCommand);
+                        if(clip.Encode)
+                            engine.CustomCommand(ffmpegCommand);
                     }
                     else
                     {
-                        engine.Convert(inputFile, outputFile, options);
+                        if (clip.Encode)
+                            engine.Convert(inputFile, outputFile, options);
                     }
                     EncodingStatusChanged(clipNum, false);
                     clipNum++;

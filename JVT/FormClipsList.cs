@@ -72,6 +72,10 @@ namespace JVT
                     {
                         clip.Volume = Int32.Parse(row.Cells["ColumnVolume"].Value.ToString());
                     }
+                    if (clip.OutputName == (string)row.Cells["outputFilename"].Value)
+                    {
+                        clip.Encode = (bool)row.Cells["Encode"].Value;
+                    }
                 }
             }
             EncoderSettings cfg = new EncoderSettings();

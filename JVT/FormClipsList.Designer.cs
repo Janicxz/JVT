@@ -51,8 +51,6 @@
             // 
             this.dataGridViewClips.AllowUserToAddRows = false;
             this.dataGridViewClips.AllowUserToDeleteRows = false;
-            this.dataGridViewClips.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
             this.dataGridViewClips.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGridViewClips.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.Encode,
