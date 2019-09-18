@@ -15,6 +15,7 @@ using MediaToolkit.Options;
 using System.IO;
 using Vlc.DotNet.Forms;
 using System.Threading;
+using Vlc.DotNet.Core.Interops;
 
 namespace JVT
 {
@@ -64,13 +65,16 @@ namespace JVT
             player.MediaResumed += Player_MediaResumed;*/
             initPlayer();
 
+            //BUG WORKAROUND: keyboard inputs not detected until user interacts with the main form. VLC eats inputs/gets focus?
+            trackBarPlayer.Select();
+
             labelMark1.BackColor = Color.Transparent;
             labelMarkEnd.BackColor = Color.Transparent;
 
-            timerTrackBarUpdate = new System.Windows.Forms.Timer();
+            /*timerTrackBarUpdate = new System.Windows.Forms.Timer();
             timerTrackBarUpdate.Interval = 100;
             timerTrackBarUpdate.Tick += TimerTrackBarUpdate_Tick;
-            timerTrackBarUpdate.Start();
+            timerTrackBarUpdate.Start();*/
         }
 
         //private bool firstLoad = true;
@@ -109,20 +113,34 @@ namespace JVT
 
             //loadVideo(clipPath);
         }
-
-
         private void VlcMediaPlayer_PositionChanged(object sender, Vlc.DotNet.Core.VlcMediaPlayerPositionChangedEventArgs e)
         {
             float posperc =  e.NewPosition * 100;
             //trackBarPlayer.Maximum = (int)vlcControlPlayer.GetCurrentMedia().Duration.TotalMilliseconds;
             //Console.WriteLine("Max: " + (int)vlcControlPlayer.GetCurrentMedia().Duration.TotalMilliseconds);
             //Console.WriteLine("Pos chnged: " + e.NewPosition + " % " + posperc);
-            float currentPositionMs = posperc * (trackBarPlayer.Maximum / 100);
+            int currentPositionMs = (int)Math.Floor(posperc * (trackBarPlayer.Maximum / 100));
             //Console.WriteLine("currentPositionMs: " + currentPositionMs);
             //Console.WriteLine("trackbar value: " + trackBarPlayer.Value);
 
+            // Don't call vlc functions from vlc callbacks or deadlock city
+            ThreadPool.QueueUserWorkItem(q => {
+                trackBarPlayer.Invoke((Action)delegate
+                {
+                    // This should be done in vlc video loaded event or something
+                    trackBarPlayer.Maximum = (int)vlcControlPlayer.GetCurrentMedia().Duration.TotalMilliseconds;
+                    //Console.WriteLine("Max: " + (int)vlcControlPlayer.GetCurrentMedia().Duration.TotalMilliseconds);
+
+                    if (currentPositionMs < 0)
+                        currentPositionMs = 0;
+                    if (currentPositionMs > trackBarPlayer.Maximum)
+                        currentPositionMs = trackBarPlayer.Maximum;
+                    trackBarPlayer.Value = (int)currentPositionMs;
+                });
+            });
+
             // Invoke or we crash on wrong thread
-            trackBarPlayer.Invoke((Action)delegate
+            /*trackBarPlayer.Invoke((Action)delegate
             {
                 // This should be done in vlc video loaded event or something
                 trackBarPlayer.Maximum = (int)vlcControlPlayer.GetCurrentMedia().Duration.TotalMilliseconds;
@@ -131,21 +149,27 @@ namespace JVT
                 if (currentPositionMs < 0)
                     currentPositionMs = 0;
                 trackBarPlayer.Value = (int)currentPositionMs;
-            });
+            });*/
         }
 
         private void loadVideo(string path)
         {
+            //VlcMediaInstance vlcMediaInstance = vlcControlPlayer.VlcMediaPlayer.Manager.CreateNewMediaFromPath(path);
+            //vlcControlPlayer.VlcMediaPlayer.Manager.ParseMedia(vlcMediaInstance);
+            //Console.WriteLine("Len: " + vlcControlPlayer.VlcMediaPlayer.Manager.GetLength(vlcMediaInstance));
             Console.WriteLine("Loading video " + path);
-           // vlcControlPlayer.SetMedia(new FileInfo(path), new[] { "input-repeat=65535" });
-          //  vlcControlPlayer.Play(); // This needs to be done outside main thread or the program can freeze
+            vlcControlPlayer.SetMedia(new FileInfo(path), new[] { "input-repeat=65535" });
+            vlcControlPlayer.Play(); // This needs to be done outside main thread or the program can freeze
             // https://github.com/ZeBobo5/Vlc.DotNet/wiki/Vlc.DotNet-freezes-(don't-call-Vlc.DotNet-from-a-Vlc.DotNet-callback)
-            ThreadPool.QueueUserWorkItem(a => vlcControlPlayer.Play(new FileInfo(path), new[] { "input-repeat=65535" }));
-            //System.Threading.Thread.Sleep(150); // wait for load or else it returns 0
+            //ThreadPool.QueueUserWorkItem(a => vlcControlPlayer.Play(new FileInfo(path), new[] { "input-repeat=65535" }));
+            //vlcControlPlayer.Play(new FileInfo(path), new[] { "input-repeat=65535" });
+            System.Threading.Thread.Sleep(150); // wait for load or else it returns 0
             //trackBarPlayer.Maximum = (int)vlcControlPlayer.GetCurrentMedia().Duration.TotalMilliseconds;
             //Console.WriteLine("Video duration: " + (int)vlcControlPlayer.GetCurrentMedia().Duration.TotalMilliseconds);
-
+            //vlcControlPlayer.Play(new FileInfo(path), new[] { "input-repeat=65535" });
+            //vlcControlPlayer.SetPause(true)
             resetClipLabels();
+            //vlcControlPlayer.SetPause(false);
         }
 
         private void Player_MediaResumed(object sender, EventArgs e)
@@ -242,6 +266,18 @@ namespace JVT
                         trackBarPlayer.Value -= frameTime;
                     e.Handled = true;
                     break;
+                case Keys.Up:
+                    vlcControlPlayer.Time += 1000;
+                    if ((trackBarPlayer.Value + 1000) < trackBarPlayer.Maximum)
+                        trackBarPlayer.Value += 1000;
+                    e.Handled = true;
+                    break;
+                case Keys.Down:
+                    vlcControlPlayer.Time -= 1000;
+                    if ((trackBarPlayer.Value - 1000) > 0)
+                        trackBarPlayer.Value -= 1000;
+                    e.Handled = true;
+                    break;
                 case Keys.Right:
                     vlcControlPlayer.Time += frameTime;
                     if ((trackBarPlayer.Value + frameTime) < trackBarPlayer.Maximum)
@@ -282,17 +318,19 @@ namespace JVT
             }*/
             if(trackBarTimespan > clipEnd)
             {
-                Console.WriteLine("ERR: clip start Position is after clip end!!");
+                Console.WriteLine("clipStart ERR: clip start Position is after clip end!!");
                 resetClipLabels();
             }
             else
             {
                 clipStart = trackBarTimespan;
                 int sliderposx = trackBarPlayer.Value * trackBarPlayer.Width / trackBarPlayer.Maximum;
-                Console.WriteLine("Slider pos: " + sliderposx);
+                Console.WriteLine("Slider pos for start: " + sliderposx);
                 labelMark1.Left = sliderposx + 15;
             }
             Console.WriteLine("Clip start: " + clipStart);
+
+            updateLabels();
         }
 
         private void ButtonClipEnd_Click(object sender, EventArgs e)
@@ -300,7 +338,7 @@ namespace JVT
             TimeSpan trackBarTimespan = TimeSpan.FromMilliseconds(trackBarPlayer.Value);
 
             Console.WriteLine("Clip end attempt: " + trackBarTimespan);
-            Console.WriteLine("start {0}, end {1}: ", clipStart, clipEnd);
+            Console.WriteLine("start {0}, end {1}: ", clipStart, trackBarTimespan);
             /*if (clipStart == TimeSpan.FromHours(1337))
             {
                 Console.WriteLine("ClipStart not set.");
@@ -311,18 +349,19 @@ namespace JVT
             }*/
             if (trackBarTimespan < clipStart)
             {
-                Console.WriteLine("ERR: clip start Position is after clip end!!");
+                Console.WriteLine("clipEnd ERR: clip start Position is after clip end!!");
                 resetClipLabels();
             }
             else
             {
                 clipEnd = trackBarTimespan;
                 int sliderposx = trackBarPlayer.Value * trackBarPlayer.Width / trackBarPlayer.Maximum;
-                Console.WriteLine("Slider pos: " + sliderposx);
+                Console.WriteLine("Slider pos for end: " + sliderposx);
                 labelMarkEnd.Left = sliderposx + 15;
             }
             Console.WriteLine("Clip end: " + clipEnd);
-           // labelMark1.Text = String.Format("S: {0}, E: {1}", clipStart, clipEnd);
+            updateLabels();
+            // labelMark1.Text = String.Format("S: {0}, E: {1}", clipStart, clipEnd);
         }
 
         private void ButtonRender_Click(object sender, EventArgs e)
@@ -411,15 +450,36 @@ namespace JVT
             }
         }
 
+        private void updateLabels()
+        {
+            if (vlcControlPlayer.VlcMediaPlayer.CouldPlay)
+            {
+                TimeSpan clipLength = clipEnd - clipStart;
+                labelClipLength.Text = String.Format("Clip length: {0}", clipLength);
+            }
+            else
+            {
+                labelClipLength.Text = "Clip length: 0";
+            }
+        }
+
         private void resetClipLabels()
         {
-            labelMark1.Location = new Point(trackBarPlayer.Location.X, trackBarPlayer.Location.Y+20); // 12
-            labelMarkEnd.Location = new Point(trackBarPlayer.Location.X + trackBarPlayer.Width-20, trackBarPlayer.Location.Y+20); // 771
-            // Check if nothing is loaded into the player yet
-            if ((int)vlcControlPlayer.VlcMediaPlayer.FramesPerSecond == 0)
-                return;
-            clipEnd = vlcControlPlayer.GetCurrentMedia().Duration;
-            clipStart = TimeSpan.Zero;
+            labelMark1.Invoke((Action)delegate
+            {
+                labelMark1.Location = new Point(trackBarPlayer.Location.X, trackBarPlayer.Location.Y + 20); // 12
+                labelMarkEnd.Location = new Point(trackBarPlayer.Location.X + trackBarPlayer.Width - 20, trackBarPlayer.Location.Y + 20); // 771
+                updateLabels();
+                // Check if nothing is loaded into the player yet
+                if (!vlcControlPlayer.VlcMediaPlayer.CouldPlay)
+                {
+                    Console.WriteLine("resetClipLabels attempted, file not loaded yet..");
+                    return;
+                }
+                clipEnd = vlcControlPlayer.GetCurrentMedia().Duration;
+                clipStart = TimeSpan.Zero;
+                Console.WriteLine("Resetting clip labels, start {0} end {1}", clipStart, clipEnd);
+            });
         }
 
         private void ButtonAddClip_Click(object sender, EventArgs e)
@@ -435,7 +495,7 @@ namespace JVT
             {
                 clipStart = TimeSpan.Zero;
             }*/
-            if(vlcControlPlayer.GetCurrentMedia() == null)
+            if(!vlcControlPlayer.VlcMediaPlayer.CouldPlay)
             {
                 Console.WriteLine("No video loaded yet! Can't add a clip.");
                 MessageBox.Show("No video loaded yet! Adding clip cancelled.");
@@ -492,6 +552,17 @@ namespace JVT
             // TODO
             // Recalculate current clip location markers instead of resetting it
             resetClipLabels();
+        }
+
+        private void FormMain_Paint(object sender, PaintEventArgs e)
+        {
+            Pen linePen = new Pen(Color.Black, 5);
+            Point startPoint = labelMark1.Location;
+            Point endPoint = labelMarkEnd.Location;
+            startPoint.Y += labelMark1.Height;
+            endPoint.Y += labelMarkEnd.Height;
+            //trackBarPlayer.Visible = false;
+            //e.Graphics.DrawLine(linePen, startPoint, endPoint);
         }
     }
 }
