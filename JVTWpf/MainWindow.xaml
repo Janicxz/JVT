@@ -13,7 +13,8 @@
             <ffme:MediaElement x:Name="ffmePlayer" LoadedBehavior="Play" UnloadedBehavior="Manual" Background="Gray" Margin="0,0,0,-23"/>
         </DockPanel>
         <DockPanel x:Name="dockPanelPlayerControls" LastChildFill="False" Margin="10,0,10,5" Background="#FFA09D9D" VerticalAlignment="Bottom" Height="63">
-            <Slider x:Name="playerTimeSlider"  Height="25" Maximum="100" DockPanel.Dock="Top" Margin="10,0" VerticalAlignment="Top"/>
+            <Slider x:Name="playerTimeSlider" Height="25" Maximum="100" DockPanel.Dock="Top" Margin="10,0" VerticalAlignment="Top"/>
+            <local:UserControlSlider x:Name="playerTimeSliderCustom" Width="500" ></local:UserControlSlider>
             <Button x:Name="buttonPauseToggle" Content="⏸ Pause" Height="35" Margin="0" VerticalAlignment="Top" DockPanel.Dock="Top" HorizontalAlignment="Center" FontSize="18"/>
             
             <Button x:Name="buttonClipStart" Content="Clip Start [" Width="75" VerticalAlignment="Top" Margin="10,-30,0,0" Height="25"/>

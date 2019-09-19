@@ -55,6 +55,7 @@ namespace JVTWpf
             playerTimeSlider.IsMoveToPointEnabled = true;
             ffmePlayer.LoopingBehavior = Unosquare.FFME.Common.MediaPlaybackState.Play;
             videoClips = new List<VideoClip>();
+
             //managerWindow = new ClipsManager(videoClips);
 
 
@@ -137,6 +138,10 @@ namespace JVTWpf
 
             currentClip.End = ffmePlayer.Position;
             Console.WriteLine("Selecting clip end at " + currentClip.End);
+            // FIXME whats wrong+
+
+            playerTimeSliderCustom.EndSlider.Value = currentClip.End.TotalMilliseconds;
+            Console.WriteLine("endslider value: " + playerTimeSliderCustom.EndSlider.Value);
         }
 
         private void ButtonClipStart_Click(object sender, RoutedEventArgs e)
@@ -155,6 +160,8 @@ namespace JVTWpf
             }
             currentClip.Start = ffmePlayer.Position;
             Console.WriteLine("Selecting clip start at " + currentClip.Start);
+            playerTimeSliderCustom.StartSlider.Value = currentClip.Start.TotalMilliseconds;
+            Console.WriteLine("startslider value: " + playerTimeSliderCustom.StartSlider.Value);
         }
 
         private void MainWindow_Drop(object sender, DragEventArgs e)
@@ -234,6 +241,15 @@ namespace JVTWpf
         {
             playerTimeSlider.Maximum = ffmePlayer.MediaInfo.Duration.TotalMilliseconds;
             Console.WriteLine("Resetting slider max: " + playerTimeSlider.Maximum);
+
+            playerTimeSliderCustom.Maximum = ffmePlayer.MediaInfo.Duration.TotalMilliseconds;
+            playerTimeSliderCustom.Minimum = 0;
+            playerTimeSliderCustom.EndSlider.Maximum = ffmePlayer.MediaInfo.Duration.TotalMilliseconds;
+            playerTimeSliderCustom.EndSlider.Minimum = 0;
+            playerTimeSliderCustom.StartSlider.Maximum = ffmePlayer.MediaInfo.Duration.TotalMilliseconds;
+            playerTimeSliderCustom.StartSlider.Minimum = 0;
+            playerTimeSliderCustom.EndSlider.Value = playerTimeSliderCustom.Maximum;
+            playerTimeSliderCustom.StartSlider.Value = playerTimeSliderCustom.Minimum;
 
             currentClip = new VideoClip();
             currentClip.filePath = ffmePlayer.MediaInfo.MediaSource;
