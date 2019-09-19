@@ -8,6 +8,7 @@
         mc:Ignorable="d"
         Title="JVT WPF" Height="450" Width="800" Background="White" MinWidth="620" MinHeight="176">
     <Grid>
+        
         <DockPanel x:Name="dockPanelPlayerContainer" LastChildFill="False" Margin="10,10,10,100">
             <ffme:MediaElement x:Name="ffmePlayer" LoadedBehavior="Play" UnloadedBehavior="Manual" Background="Gray" Margin="0,0,0,-23"/>
         </DockPanel>
@@ -20,6 +21,7 @@
             <Button x:Name="buttonClipAdd" Content="Add clip" Width="75" VerticalAlignment="Top" Margin="10,-30,0,0" Height="25"/>
             <Button x:Name="buttonMuteToggle" Content="🔇 Mute" Height="35" DockPanel.Dock="Top" Margin="0,-34,0,0" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Top"/>
             <Button x:Name="buttonEncode" Content="Encode" Height="35" Width="75" DockPanel.Dock="Right" VerticalAlignment="Top" Margin="0,-35,0,0" FontSize="18"/>
+            <Label x:Name="labelStart" Content="START" Margin="0,-67,0,0" FontSize="22" HorizontalAlignment="Left" VerticalAlignment="Top"/>
         </DockPanel>
 
     </Grid>

@@ -556,11 +556,11 @@ namespace JVT
 
         private void FormMain_Paint(object sender, PaintEventArgs e)
         {
-            Pen linePen = new Pen(Color.Black, 5);
+           /* Pen linePen = new Pen(Color.Black, 5);
             Point startPoint = labelMark1.Location;
             Point endPoint = labelMarkEnd.Location;
             startPoint.Y += labelMark1.Height;
-            endPoint.Y += labelMarkEnd.Height;
+            endPoint.Y += labelMarkEnd.Height;*/
             //trackBarPlayer.Visible = false;
             //e.Graphics.DrawLine(linePen, startPoint, endPoint);
         }

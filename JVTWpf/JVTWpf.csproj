@@ -75,6 +75,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="FFmpegEncoder.cs" />
     <Compile Include="VideoClip.cs" />
     <Compile Include="ClipsManager.xaml.cs">
       <DependentUpon>ClipsManager.xaml</DependentUpon>

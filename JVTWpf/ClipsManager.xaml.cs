@@ -22,6 +22,7 @@ namespace JVTWpf
     public partial class ClipsManager : Window
     {
         List<VideoClip> videoClips;
+        FFmpegEncoder encoder;
         public ClipsManager(List<VideoClip> videoClipsList)
         {
             /*ObservableCollection<VideoClip> clipsList = new ObservableCollection<VideoClip>();
@@ -34,7 +35,7 @@ namespace JVTWpf
             videoClips = videoClipsList;
             this.Loaded += ClipsManager_Loaded;
             dataGridClips.Unloaded += DataGridClips_Unloaded;
-            this.Closing += ClipsManager_Closing;
+           // this.Closing += ClipsManager_Closing;
             buttonEncode.Click += ButtonEncode_Click;
             buttonClearClips.Click += ButtonClearClips_Click;
         }
@@ -47,16 +48,25 @@ namespace JVTWpf
 
         //public bool closingApplication = false;
 
-        private void ClipsManager_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        /*private void ClipsManager_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             //dataGridClips.CommitEdit();
-            /*
+            
             if(!closingApplication)
             {
                 this.Visibility = Visibility.Hidden;
                 e.Cancel = true;
-            }*/
-        }
+            }
+            else
+            {
+                this.Loaded -= ClipsManager_Loaded;
+                dataGridClips.Unloaded -= DataGridClips_Unloaded;
+                this.Closing -= ClipsManager_Closing;
+                buttonEncode.Click -= ButtonEncode_Click;
+                buttonClearClips.Click -= ButtonClearClips_Click;
+                base.Close();
+            }
+        }*/
 
         private void ButtonClearClips_Click(object sender, RoutedEventArgs e)
         {
@@ -73,7 +83,9 @@ namespace JVTWpf
 
         private void ButtonEncode_Click(object sender, RoutedEventArgs e)
         {
-            Console.WriteLine("Clips " + videoClips);
+            //Console.WriteLine("Clips " + videoClips);
+            encoder = new FFmpegEncoder(videoClips);
+            encoder.Encode(1920, 1080, 12000, 60); // 1920x1080 12mbit 60 fps // TODO: Add UI for these
             System.Windows.Forms.MessageBox.Show("Encoding finished!");
             //videoClips.Clear();
             dataGridClips.Items.Refresh();

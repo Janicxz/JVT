@@ -23,6 +23,8 @@ namespace JVTWpf
     /// </summary>
     public partial class MainWindow : Window
     {
+        // TODO: FIXME: random crashing on close due to child window (ClipsManager)
+        // http://www.thejoyofcode.com/Creating_a_Range_Slider_in_WPF_and_other_cool_tips_and_tricks_for_UserControls_.aspx
         public MainWindow()
         {
             Unosquare.FFME.Library.FFmpegDirectory = Environment.CurrentDirectory + @"\ffmpeg";
@@ -54,6 +56,8 @@ namespace JVTWpf
             ffmePlayer.LoopingBehavior = Unosquare.FFME.Common.MediaPlaybackState.Play;
             videoClips = new List<VideoClip>();
             //managerWindow = new ClipsManager(videoClips);
+
+
 
             loadVideo(Environment.CurrentDirectory + @"\test2.webm");
         }
@@ -245,6 +249,15 @@ namespace JVTWpf
                 currentClip.MergeAudioTracks = true;
                 Console.WriteLine("Multiple audio tracks detected");
             }
+            // FIXME: finish this slider fuckery
+            /*Point sliderPos = playerTimeSlider.PointToScreen(new Point(0d, 0d));
+            Console.WriteLine("sliderpos:" + sliderPos);
+            Console.WriteLine("Slider width " + playerTimeSlider.ActualWidth + " final: " + (sliderPos.X - playerTimeSlider.ActualWidth));
+            Console.WriteLine("label: " + labelStart.Margin);
+            labelStart.Margin = new Thickness(sliderPos.X, sliderPos.Y, 0, 0);
+            Console.WriteLine("after: " + labelStart.Margin);*/
+            //labelMark1.Location = new Point(trackBarPlayer.Location.X, trackBarPlayer.Location.Y + 20); // 12
+            //labelMarkEnd.Location = new Point(trackBarPlayer.Location.X + trackBarPlayer.Width - 20, trackBarPlayer.Location.Y + 20); // 771
         }
 
         private void checkFileForDuplicate()
