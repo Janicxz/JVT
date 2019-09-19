@@ -1,0 +1,26 @@
+﻿<Window x:Class="JVTWpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ffme="clr-namespace:Unosquare.FFME;assembly=ffme.win"
+        xmlns:local="clr-namespace:JVTWpf"
+        mc:Ignorable="d"
+        Title="JVT WPF" Height="450" Width="800" Background="White" MinWidth="620" MinHeight="176">
+    <Grid>
+        <DockPanel x:Name="dockPanelPlayerContainer" LastChildFill="False" Margin="10,10,10,100">
+            <ffme:MediaElement x:Name="ffmePlayer" LoadedBehavior="Play" UnloadedBehavior="Manual" Background="Gray" Margin="0,0,0,-23"/>
+        </DockPanel>
+        <DockPanel x:Name="dockPanelPlayerControls" LastChildFill="False" Margin="10,0,10,5" Background="#FFA09D9D" VerticalAlignment="Bottom" Height="63">
+            <Slider x:Name="playerTimeSlider"  Height="25" Maximum="100" DockPanel.Dock="Top" Margin="10,0" VerticalAlignment="Top"/>
+            <Button x:Name="buttonPauseToggle" Content="⏸ Pause" Height="35" Margin="0" VerticalAlignment="Top" DockPanel.Dock="Top" HorizontalAlignment="Center" FontSize="18"/>
+            
+            <Button x:Name="buttonClipStart" Content="Clip Start [" Width="75" VerticalAlignment="Top" Margin="10,-30,0,0" Height="25"/>
+            <Button x:Name="buttonClipEnd" Content="] Clip End" Width="75" VerticalAlignment="Top" Margin="10,-30,0,0" Height="25"/>
+            <Button x:Name="buttonClipAdd" Content="Add clip" Width="75" VerticalAlignment="Top" Margin="10,-30,0,0" Height="25"/>
+            <Button x:Name="buttonMuteToggle" Content="🔇 Mute" Height="35" DockPanel.Dock="Top" Margin="0,-34,0,0" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+            <Button x:Name="buttonEncode" Content="Encode" Height="35" Width="75" DockPanel.Dock="Right" VerticalAlignment="Top" Margin="0,-35,0,0" FontSize="18"/>
+        </DockPanel>
+
+    </Grid>
+</Window>

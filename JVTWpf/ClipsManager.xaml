@@ -1,0 +1,28 @@
+﻿<Window x:Class="JVTWpf.ClipsManager"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:JVTWpf"
+        mc:Ignorable="d"
+        Title="ClipsManager" Height="450" Width="800">
+    <Grid>
+        <DockPanel LastChildFill="False" Margin="10,10,10,72" Background="#FF9C9A9A">
+            <DataGrid x:Name="dataGridClips" Height="337" DockPanel.Dock="Top" AutoGenerateColumns="False" DataContext="{Binding Source=videoClips}">
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn x:Name="Encode" Binding="{Binding Encode}" Header="Encode"/>
+                    <DataGridTextColumn x:Name="Volume" Binding="{Binding Volume}" Header="Volume (0-250)"/>
+                    <DataGridCheckBoxColumn x:Name="MergeAudio" Binding="{Binding MergeAudioTracks}" Header="Combine audio tracks"/>
+                    <DataGridCheckBoxColumn x:Name="MergeClips" Binding="{Binding Merge}" Header="Merge to single file"/>
+                    <DataGridTextColumn x:Name="Filename" Binding="{Binding OutputName}" Header="Filename"/>
+                    <DataGridTextColumn x:Name="ClipLength" Binding="{Binding Length}" Header="Length"/>
+                    <DataGridTextColumn x:Name="ClipStart" Binding="{Binding Start}" Header="Start"/>
+                    <DataGridTextColumn x:Name="ClipEnd" Binding="{Binding End}" Header="End"/>
+
+                </DataGrid.Columns>
+            </DataGrid>
+        </DockPanel>
+        <Button x:Name="buttonEncode" Content="Start encoding" HorizontalAlignment="Left" Margin="323,366,0,0" VerticalAlignment="Top" FontSize="20"/>
+        <Button x:Name="buttonClearClips" Content="Clear clips list" HorizontalAlignment="Left" Margin="10,386,0,0" VerticalAlignment="Top" RenderTransformOrigin="1.052,0.949" FontSize="14"/>
+    </Grid>
+</Window>
