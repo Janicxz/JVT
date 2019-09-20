@@ -42,7 +42,7 @@ namespace JVTWpf
                 }
 
                 float clipVolume = (float)clip.Volume / 100;
-                if (clip.MergeAudioTracks)
+                /*if (clip.MergeAudioTracks)
                 {
                     // Merge mic and game audio tracks
                     if(clip.Encode)
@@ -66,29 +66,32 @@ namespace JVTWpf
                     }
                 }
                 else
+                {*/
+                string ffmpegCommand = "";
+                if (hwAccel)
+                    ffmpegCommand += string.Format("-vsync 0 -hwaccel cuvid -c:v h264_cuvid -resize {0}x{1} ", videoWidth, videoHeight);
+
+                // build command string
+                ffmpegCommand += string.Format("-ss {1} -i \"{0}\" ", inputFilename, clip.Start);
+                if (clip.MergeAudioTracks)
+                    ffmpegCommand += string.Format("-filter_complex \"[0:a:0]volume={0}[a1];[0:a:1][a1]amerge=inputs=2[a]\" -map 0:v:0 -map \"[a]\" ", clipVolume.ToString(CultureInfo.InvariantCulture));
+
+                if (hwAccel)
+                    ffmpegCommand += "-c:v h264_nvenc ";
+                else
+                    ffmpegCommand += string.Format("-c:v libx264 -preset medium -vf scale={0}x{1},setsar=1 ", videoWidth, videoHeight);
+                ffmpegCommand += string.Format("-b:v {1}K -maxrate {1}K -framerate {4} ", inputFilename, videoBitrate, videoWidth, videoHeight, videoFramerate, clip.Start);
+
+
+                if (clipVolume != 1.0 && !clip.MergeAudioTracks) // adjust volume only if necessary and only if we didn't already adjust it in audio merge.
+                    ffmpegCommand += String.Format("-filter:a \"volume={0}\" ", clipVolume.ToString(CultureInfo.InvariantCulture));
+                ffmpegCommand += String.Format("-ac 2 -c:a aac -b:a 384k -t {0} \"{1}\"", clip.End - clip.Start, outputFilename);
+                if(clip.Encode)
                 {
-                    string ffmpegCommand = "";
-                    if (hwAccel)
-                        ffmpegCommand += string.Format("-vsync 0 -hwaccel cuvid -c:v h264_cuvid -resize {0}x{1} ", videoWidth, videoHeight);
-
-                    // build command string
-                    ffmpegCommand += string.Format("-ss {1} -i \"{0}\" ", inputFilename, clip.Start);
-                    if (hwAccel)
-                        ffmpegCommand += "-c:v h264_nvenc ";
-                    else
-                        ffmpegCommand += string.Format("-c:v libx264 -preset medium -vf scale={0}x{1},setsar=1 ", videoWidth, videoHeight);
-                    ffmpegCommand += string.Format("-b:v {1}K -maxrate {1}K -framerate {4} ", inputFilename, videoBitrate, videoWidth, videoHeight, videoFramerate, clip.Start);
-
-
-                    if (clipVolume != 1.0) // adjust volume only if necessary
-                        ffmpegCommand += String.Format("-filter:a \"volume={0}\" ", clipVolume.ToString(CultureInfo.InvariantCulture));
-                    ffmpegCommand += String.Format("-ac 2 -c:a aac -b:a 384k -t {0} \"{1}\"", clip.End - clip.Start, outputFilename);
-                    if(clip.Encode)
-                    {
-                        Console.WriteLine("Running ffmpeg with cmd: " + ffmpegCommand);
-                        ffmpegCommandExecute(ffmpegCommand);
-                    }
+                    Console.WriteLine("Running ffmpeg with cmd: " + ffmpegCommand);
+                    ffmpegCommandExecute(ffmpegCommand);
                 }
+                //}
             }
             if(mergeClips)
             {
