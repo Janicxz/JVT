@@ -5,10 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:JVTWpf"
         mc:Ignorable="d"
-        Title="ClipsManager" Height="450" Width="800">
+        Title="ClipsManager" Height="450" Width="800" MinWidth="670">
     <Grid>
-        <DockPanel LastChildFill="False" Margin="10,10,10,72" Background="#FF9C9A9A">
-            <DataGrid x:Name="dataGridClips" Height="337" DockPanel.Dock="Top" AutoGenerateColumns="False" DataContext="{Binding Source=videoClips}">
+        <DockPanel Margin="10,10,10,72" Background="#FF9C9A9A" LastChildFill="False">
+            <DataGrid x:Name="dataGridClips" DockPanel.Dock="Top" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" DataContext="{Binding Source=videoClips}">
                 <DataGrid.Columns>
                     <DataGridCheckBoxColumn x:Name="Encode" Binding="{Binding Encode}" Header="Encode"/>
                     <DataGridTextColumn x:Name="Volume" Binding="{Binding Volume}" Header="Volume (0-250)"/>
@@ -22,7 +22,33 @@
                 </DataGrid.Columns>
             </DataGrid>
         </DockPanel>
-        <Button x:Name="buttonEncode" Content="Start encoding" HorizontalAlignment="Left" Margin="323,366,0,0" VerticalAlignment="Top" FontSize="20"/>
-        <Button x:Name="buttonClearClips" Content="Clear clips list" HorizontalAlignment="Left" Margin="10,386,0,0" VerticalAlignment="Top" RenderTransformOrigin="1.052,0.949" FontSize="14"/>
+        <DockPanel LastChildFill="False" Margin="10,0,10,10" Background="#FFCFCCCC" MinHeight="57" Height="57" VerticalAlignment="Bottom">
+            <Button x:Name="buttonEncode" Content="Start encoding" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="20" DockPanel.Dock="Top" Margin="0,5,0,0"/>
+            <Button x:Name="buttonClearClips" Content="Clear clips list" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="14" Margin="5,-5,0,0"/>
+            <!--
+            <ComboBox x:Name="comboBoxFormat" HorizontalAlignment="Left" Height="25" VerticalAlignment="Top" FontSize="16" DockPanel.Dock="Right" Margin="0,-5,5,0" IsEditable="True" SelectedIndex="0">
+                <ComboBoxItem Content=".mp4"/>
+                <ComboBoxItem Content=".webm"/>
+            </ComboBox>
+            -->
+            <ComboBox x:Name="comboBoxFPS" HorizontalAlignment="Left" Height="25" VerticalAlignment="Top" FontSize="16" DockPanel.Dock="Right" Margin="0,-5,5,0" IsEditable="True" SelectedIndex="0">
+                <ComboBoxItem Content="60"/>
+                <ComboBoxItem Content="30"/>
+            </ComboBox>
+            <ComboBox x:Name="comboBoxBitrate" HorizontalAlignment="Left" Height="25" VerticalAlignment="Top" FontSize="16" DockPanel.Dock="Right" Margin="0,-5,5,0" IsEditable="True" SelectedIndex="0">
+                <ComboBoxItem Content="12000"/>
+                <ComboBoxItem Content="7500"/>
+            </ComboBox>
+            <ComboBox x:Name="comboBoxResolution" HorizontalAlignment="Left" Height="25" VerticalAlignment="Top" FontSize="16" DockPanel.Dock="Right" Margin="0,-5,5,0" IsEditable="True" SelectedIndex="0">
+                <ComboBoxItem Content="1920x1080"/>
+                <ComboBoxItem Content="1280x720"/>
+            </ComboBox>
+            <Label Content="Resolution" VerticalAlignment="Top" DockPanel.Dock="Right" HorizontalAlignment="Right" FontSize="16" Margin="0,-30,-80,0"/>
+            <Label Content="Bitrate(Kb)" VerticalAlignment="Top" DockPanel.Dock="Right" HorizontalAlignment="Right" FontSize="16" Margin="0,-30,-190,0"/>
+            <Label Content="FPS" VerticalAlignment="Top" DockPanel.Dock="Right" HorizontalAlignment="Right" FontSize="16" Margin="0,-30,-220,0"/>
+            <!--
+            <Label Content="Format" VerticalAlignment="Top" DockPanel.Dock="Right" HorizontalAlignment="Right" FontSize="16" Margin="0,-30,-290,0"/>
+            -->
+        </DockPanel>
     </Grid>
 </Window>

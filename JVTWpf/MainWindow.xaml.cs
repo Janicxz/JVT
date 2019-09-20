@@ -25,6 +25,7 @@ namespace JVTWpf
     {
         // TODO: FIXME: random crashing on close due to child window (ClipsManager)
         // http://www.thejoyofcode.com/Creating_a_Range_Slider_in_WPF_and_other_cool_tips_and_tricks_for_UserControls_.aspx
+        // Add clip reordering support in manage for merging (simple video editing)
         public MainWindow()
         {
             Unosquare.FFME.Library.FFmpegDirectory = Environment.CurrentDirectory + @"\ffmpeg";
@@ -50,9 +51,10 @@ namespace JVTWpf
             buttonClipAdd.Click += ButtonClipAdd_Click;
             buttonMuteToggle.Click += ButtonMuteToggle_Click;
             buttonEncode.Click += ButtonEncode_Click;
+            this.PreviewKeyDown += MainWindow_PreviewKeyDown;
             this.Closing += MainWindow_Closing;
             this.AllowDrop = true;
-            playerTimeSlider.IsMoveToPointEnabled = true;
+            //playerTimeSlider.IsMoveToPointEnabled = true;
             ffmePlayer.LoopingBehavior = Unosquare.FFME.Common.MediaPlaybackState.Play;
             videoClips = new List<VideoClip>();
 
@@ -61,6 +63,65 @@ namespace JVTWpf
 
 
             loadVideo(Environment.CurrentDirectory + @"\test2.webm");
+        }
+
+        private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            Console.WriteLine("Keydown: {0}", e.Key);
+            if(!ffmePlayer.IsOpen)
+            {
+                Console.WriteLine("No file loaded yet.");
+                return;
+            }
+
+            int frameTime = 1000 / (int)ffmePlayer.VideoFrameRate;
+            switch(e.Key)
+            {
+                case Key.Left:
+                    if (Keyboard.Modifiers == ModifierKeys.Shift)
+                        ffmePlayer.Position = currentClip.Start;
+                    else if (Keyboard.Modifiers == ModifierKeys.Control)
+                        SetClipStart();
+                    else
+                        ffmePlayer.Position -= TimeSpan.FromMilliseconds(frameTime);
+                    e.Handled = true;
+                    break;
+                case Key.Right:
+                    if (Keyboard.Modifiers == ModifierKeys.Shift)
+                        ffmePlayer.Position = currentClip.End;
+                    else if (Keyboard.Modifiers == ModifierKeys.Control)
+                        SetClipEnd();
+                    else
+                        ffmePlayer.Position += TimeSpan.FromMilliseconds(frameTime);
+                    e.Handled = true;
+                    break;
+                case Key.I: // Premiere hotkeys
+                    SetClipStart();
+                    e.Handled = true;
+                    break;
+                case Key.O:
+                    SetClipEnd();
+                    e.Handled = true;
+                    break;
+                case Key.X:
+                    AddClip();
+                    e.Handled = true;
+                    break;
+                case Key.Up:
+                    ffmePlayer.Position += TimeSpan.FromMilliseconds(1000);
+                    e.Handled = true;
+                    break;
+                case Key.Down:
+                    ffmePlayer.Position -= TimeSpan.FromMilliseconds(1000);
+                    e.Handled = true;
+                    break;
+                case Key.Space:
+                    togglePlayerPause();
+                    e.Handled = true;
+                    break;
+                default:
+                    break;
+            }
         }
 
         private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -74,6 +135,9 @@ namespace JVTWpf
         private void ButtonEncode_Click(object sender, RoutedEventArgs e)
         {
             //if(managerWindow == null)
+            if(!ffmePlayer.IsPaused)
+                togglePlayerPause();
+
             managerWindow = new ClipsManager(videoClips);
             managerWindow.Closed += ManagerWindow_Closed;
             managerWindow.Show();
@@ -107,21 +171,37 @@ namespace JVTWpf
 
         private void ButtonClipAdd_Click(object sender, RoutedEventArgs e)
         {
-            Console.WriteLine("Adding clip {0}-{1} ", currentClip.Start, currentClip.End);
-            if(!mediaReadyToPlay)
+            AddClip();
+        }
+
+        private void LoadClip(int clipNumber)
+        {
+            // Add support to load existing clip from the list we have made during this session.
+        }
+
+        private void AddClip()
+        {
+            if (!mediaReadyToPlay)
             {
                 Console.WriteLine("No media loaded yet. Can't add clip");
                 return;
             }
+            Console.WriteLine("Adding clip {0}-{1} ", currentClip.Start, currentClip.End);
             checkFileForDuplicate();
-            currentClip.Length = currentClip.End-currentClip.Start;
+            currentClip.Length = currentClip.End - currentClip.Start;
             videoClips.Add(currentClip);
-            if(managerWindow != null)
+            if (managerWindow != null)
                 managerWindow.RefreshDatagrid();
             resetInterface();
         }
 
         private void ButtonClipEnd_Click(object sender, RoutedEventArgs e)
+        {
+            SetClipEnd();
+            //Console.WriteLine("endslider value: " + playerTimeSliderCustom.EndSlider.Value);
+        }
+
+        private void SetClipEnd()
         {
             if (!mediaReadyToPlay)
             {
@@ -135,16 +215,16 @@ namespace JVTWpf
                 resetInterface();
                 return;
             }
-
             currentClip.End = ffmePlayer.Position;
             Console.WriteLine("Selecting clip end at " + currentClip.End);
-            // FIXME whats wrong+
-
             playerTimeSliderCustom.EndSlider.Value = currentClip.End.TotalMilliseconds;
-            Console.WriteLine("endslider value: " + playerTimeSliderCustom.EndSlider.Value);
         }
 
         private void ButtonClipStart_Click(object sender, RoutedEventArgs e)
+        {
+            SetClipStart();
+        }
+        private void SetClipStart()
         {
             if (!mediaReadyToPlay)
             {
@@ -161,7 +241,7 @@ namespace JVTWpf
             currentClip.Start = ffmePlayer.Position;
             Console.WriteLine("Selecting clip start at " + currentClip.Start);
             playerTimeSliderCustom.StartSlider.Value = currentClip.Start.TotalMilliseconds;
-            Console.WriteLine("startslider value: " + playerTimeSliderCustom.StartSlider.Value);
+            //Console.WriteLine("startslider value: " + playerTimeSliderCustom.StartSlider.Value);
         }
 
         private void MainWindow_Drop(object sender, DragEventArgs e)
@@ -176,6 +256,11 @@ namespace JVTWpf
 
         private void ButtonPauseToggle_Click(object sender, RoutedEventArgs e)
         {
+            if (!mediaReadyToPlay)
+            {
+                Console.WriteLine("No media loaded yet. Can't toggle pause");
+                return;
+            }
             Console.WriteLine("Pause toggle clicked!");
             togglePlayerPause();
         }
@@ -193,25 +278,34 @@ namespace JVTWpf
         {
             double currentPosition = 0;
             //Console.WriteLine("Media position: " + e.Position);
-            if (e.Position.TotalMilliseconds > playerTimeSlider.Maximum)
-                currentPosition = playerTimeSlider.Maximum;
+            if (e.Position.TotalMilliseconds > playerTimeSliderCustom.CurrentSlider.Maximum)
+                currentPosition = playerTimeSliderCustom.CurrentSlider.Maximum;
             else if (e.Position.TotalMilliseconds < 0)
                 currentPosition = 0;
             else
                 currentPosition = e.Position.TotalMilliseconds;
             //Console.WriteLine("Setting slider pos: " + currentPosition);
             // ignore valuechanged event for automatic playback slider changes.
-            playerTimeSlider.ValueChanged -= PlayerTimeSlider_ValueChanged;
-            playerTimeSlider.Value = currentPosition;
-            playerTimeSlider.ValueChanged += PlayerTimeSlider_ValueChanged;
+            //playerTimeSlider.ValueChanged -= PlayerTimeSlider_ValueChanged;
+            //playerTimeSlider.Value = currentPosition;
+            playerTimeSliderCustom.CurrentSlider.ValueChanged -= CurrentSlider_ValueChanged;
+            playerTimeSliderCustom.CurrentSlider.Value = currentPosition;
+            playerTimeSliderCustom.CurrentSlider.ValueChanged += CurrentSlider_ValueChanged;
+            //playerTimeSlider.ValueChanged += PlayerTimeSlider_ValueChanged;
         }
 
+        private void CurrentSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            Console.WriteLine("Slider click at {0}, changing player position..", e.NewValue);
+            ffmePlayer.Position = TimeSpan.FromMilliseconds(e.NewValue);
+        }
+        /*
         private void PlayerTimeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             Console.WriteLine("Slider click at {0}, changing player position..", playerTimeSlider.Value);
             ffmePlayer.Position = TimeSpan.FromMilliseconds(playerTimeSlider.Value);
         }
-
+        */
         private void FfmePlayer_MediaReady(object sender, EventArgs e)
         {
             Console.WriteLine("Media ready to play");
@@ -239,9 +333,11 @@ namespace JVTWpf
         // Reset clip UI and prepare clip info
         private void resetInterface()
         {
-            playerTimeSlider.Maximum = ffmePlayer.MediaInfo.Duration.TotalMilliseconds;
-            Console.WriteLine("Resetting slider max: " + playerTimeSlider.Maximum);
+            //playerTimeSlider.Maximum = ffmePlayer.MediaInfo.Duration.TotalMilliseconds;
+           
 
+            playerTimeSliderCustom.CurrentSlider.Maximum = ffmePlayer.MediaInfo.Duration.TotalMilliseconds;
+            playerTimeSliderCustom.CurrentSlider.Minimum = 0;
             playerTimeSliderCustom.Maximum = ffmePlayer.MediaInfo.Duration.TotalMilliseconds;
             playerTimeSliderCustom.Minimum = 0;
             playerTimeSliderCustom.EndSlider.Maximum = ffmePlayer.MediaInfo.Duration.TotalMilliseconds;
@@ -250,7 +346,7 @@ namespace JVTWpf
             playerTimeSliderCustom.StartSlider.Minimum = 0;
             playerTimeSliderCustom.EndSlider.Value = playerTimeSliderCustom.Maximum;
             playerTimeSliderCustom.StartSlider.Value = playerTimeSliderCustom.Minimum;
-
+            //Console.WriteLine("Resetting slider max: " + playerTimeSliderCustom.CurrentSlider.Maximum);
             currentClip = new VideoClip();
             currentClip.filePath = ffmePlayer.MediaInfo.MediaSource;
             currentClip.OutputName = System.IO.Path.GetFileName(currentClip.filePath);
@@ -278,9 +374,17 @@ namespace JVTWpf
 
         private void checkFileForDuplicate()
         {
+            // Force mp4 output for now
+            // TODO: Add proper format selection
+            if (System.IO.Path.GetExtension(currentClip.OutputName) != ".mp4")
+            {
+                Console.WriteLine("File extension not .mp4, changing.. ({0})", currentClip.OutputName);
+                currentClip.OutputName = System.IO.Path.GetFileNameWithoutExtension(currentClip.OutputName);
+                currentClip.OutputName += ".mp4";
+            }
             Console.WriteLine("Checking name for duplicate {0}", currentClip.OutputName);
 
-            string directoryName = System.IO.Path.GetDirectoryName(currentClip.filePath);
+            string directoryName = Environment.CurrentDirectory; //System.IO.Path.GetDirectoryName(currentClip.filePath);
             directoryName += "\\videos";
 
             // make sure file doesnt exist on disk AND we don't have other clip in queue for same name
@@ -289,24 +393,31 @@ namespace JVTWpf
             string outNameOriginal = currentClip.OutputName;
             int nameCount = 1;
             
+            // Loop through names until filename doesn't exist on disk and it's not used by any clip in cliplist.
             while (nameExists || nameUsedInList)
             {
                 // Don't loop through this again if we found a free name
                 if (File.Exists(directoryName + "\\" + currentClip.OutputName) && nameExists)
                 {
+                    Console.WriteLine("File name already used: " + directoryName + "\\" + currentClip.OutputName);
                     if(!File.Exists(directoryName + "\\" + nameCount + "_" + currentClip.OutputName))
                     {
                         nameExists = false;
                         currentClip.OutputName = nameCount + "_" + currentClip.OutputName;
+                        Console.WriteLine("Found free name not on disk: " + directoryName + "\\" + currentClip.OutputName);
                         //outNameOriginal = nameCount + "_" + outNameOriginal;
                     }
                     else
                     {
+                        Console.WriteLine("found file on disk: " + directoryName + "\\" + currentClip.OutputName);
                         nameCount++;
                     }
                 }
                 else
+                {
+                    //Console.WriteLine("Filename is free: " + directoryName + "\\" + currentClip.OutputName);
                     nameExists = false;
+                }
                 // We found free name, now check if its used in list
                 if (!nameExists)
                 {

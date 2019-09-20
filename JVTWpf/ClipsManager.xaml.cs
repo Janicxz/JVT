@@ -84,11 +84,27 @@ namespace JVTWpf
         private void ButtonEncode_Click(object sender, RoutedEventArgs e)
         {
             //Console.WriteLine("Clips " + videoClips);
+            int resW, resH, bitrate, framerate;
+            try
+            {
+                resW = int.Parse(((ComboBoxItem)comboBoxResolution.SelectedItem).Content.ToString().Split('x')[0]);
+                resH = int.Parse(((ComboBoxItem)comboBoxResolution.SelectedItem).Content.ToString().Split('x')[1]);
+                bitrate = int.Parse(((ComboBoxItem)comboBoxBitrate.SelectedItem).Content.ToString());
+                framerate = int.Parse(((ComboBoxItem)comboBoxFPS.SelectedItem).Content.ToString());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("buttonEncode: " + ex.Message);
+                System.Windows.Forms.MessageBox.Show("Invalid encoder settings detected, canceling encoding.");
+                return;
+            }
             encoder = new FFmpegEncoder(videoClips);
-            encoder.Encode(1920, 1080, 12000, 60); // 1920x1080 12mbit 60 fps // TODO: Add UI for these
-            System.Windows.Forms.MessageBox.Show("Encoding finished!");
+            Console.WriteLine("Setting encoding values: {0}, {1}, {2}", resW + "x" + resH, bitrate, framerate);
+            encoder.Encode(resW, resH, bitrate, framerate);
+            System.Windows.Forms.MessageBox.Show("Encoding finished! \n" +
+                "Encoded clips can be found in " + Environment.CurrentDirectory + "\\videos");
             //videoClips.Clear();
-            dataGridClips.Items.Refresh();
+            //dataGridClips.Items.Refresh();
         }
 
         private void ClipsManager_Loaded(object sender, RoutedEventArgs e)

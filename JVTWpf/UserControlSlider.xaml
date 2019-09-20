@@ -37,7 +37,38 @@
                                             Fill="Red"
                                             Stroke="Black"
                                             StrokeThickness="1"
-                                            Width="10"
+                                            Width="5"
+                                            Height="18"
+                                            SnapsToDevicePixels="True"></Rectangle>
+                                    </ControlTemplate>
+                                </Thumb.Template>
+                            </Thumb>
+                        </Track.Thumb>
+                    </Track>
+                </Grid>
+            </Border>
+        </ControlTemplate>
+        <ControlTemplate x:Key="sliderCustomGreen" TargetType="{x:Type Slider}">
+            <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto" MinHeight="{TemplateBinding MinHeight}"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Rectangle x:Name="PART_SelectionRange" ></Rectangle>
+
+                    <Track x:Name="PART_Track" Grid.Row="1">
+                        <Track.Thumb>
+                            <Thumb x:Name="Thumb">
+                                <Thumb.Template>
+                                    <ControlTemplate TargetType="Thumb">
+                                        <Rectangle 
+                                            Fill="Green"
+                                            Stroke="Black"
+                                            StrokeThickness="1"
+                                            Width="5"
                                             Height="18"
                                             SnapsToDevicePixels="True"></Rectangle>
                                     </ControlTemplate>
@@ -56,9 +87,9 @@
                 Minimum="{Binding ElementName=root, Path=Minimum}"
                 Maximum="{Binding ElementName=root, Path=Maximum}"
                 Value="{Binding ElementName=root, Path=StartValue}"
-                Template="{StaticResource sliderCustom}"
+                Template="{StaticResource sliderCustomGreen}"
+                Panel.ZIndex="1"
                 IsHitTestVisible="False"
-                Margin="0,0,0,0"
                 />
         <Slider x:Name="CurrentSlider"
                 Minimum="{Binding ElementName=root, Path=Minimum}"
@@ -72,7 +103,6 @@
                 Value="{Binding ElementName=root, Path=EndValue}"
                 Template="{StaticResource sliderCustom}"
                 IsHitTestVisible="False"
-                Margin="0,0,0,0"
                 />
 
     </Grid>
