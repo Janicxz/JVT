@@ -62,7 +62,7 @@ namespace JVTWpf
 
 
 
-            loadVideo(Environment.CurrentDirectory + @"\test2.webm");
+            //loadVideo(Environment.CurrentDirectory + @"\test2.webm");
         }
 
         private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Management;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,6 +14,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+
 
 namespace JVTWpf
 {
@@ -100,15 +102,40 @@ namespace JVTWpf
             }
             encoder = new FFmpegEncoder(videoClips);
             Console.WriteLine("Setting encoding values: {0}, {1}, {2}", resW + "x" + resH, bitrate, framerate);
-            encoder.Encode(resW, resH, bitrate, framerate);
+            encoder.Encode(resW, resH, bitrate, framerate, (bool)checkBoxHardwareAccel.IsChecked);
             System.Windows.Forms.MessageBox.Show("Encoding finished! \n" +
                 "Encoded clips can be found in " + Environment.CurrentDirectory + "\\videos");
             //videoClips.Clear();
             //dataGridClips.Items.Refresh();
         }
 
+        private string GetGraphicsCardName()
+        {
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_DisplayConfiguration");
+            string graphicsCard = "";
+            foreach(ManagementObject obj in searcher.Get())
+            {
+                foreach(PropertyData property in obj.Properties)
+                {
+                    if(property.Name == "Description")
+                    {
+                        graphicsCard = property.Value.ToString();
+                    }
+                }
+            }
+            Console.WriteLine("Found graphics card: " + graphicsCard);
+            return graphicsCard;
+        }
+
         private void ClipsManager_Loaded(object sender, RoutedEventArgs e)
         {
+            string gfxCardName = GetGraphicsCardName();
+            if (gfxCardName.ToLower().Contains("nvidia"))
+            {
+                checkBoxHardwareAccel.IsEnabled = true;
+                checkBoxHardwareAccel.Content = string.Format("Use hardware encoding ({0})", gfxCardName);
+            }
+
             RefreshDatagrid();
             //dataGridClips.Items.Add(new object[] { });
             //dataGridClips.ItemsSource = videoClips;
