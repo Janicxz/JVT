@@ -338,3 +338,14 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+JVTWpf/ffmpeg/avcodec-58.dll
+JVTWpf/ffmpeg/avdevice-58.dll
+JVTWpf/ffmpeg/avfilter-7.dll
+JVTWpf/ffmpeg/avformat-58.dll
+JVTWpf/ffmpeg/avutil-56.dll
+JVTWpf/ffmpeg/ffmpeg.exe
+JVTWpf/ffmpeg/ffplay.exe
+JVTWpf/ffmpeg/ffprobe.exe
+JVTWpf/ffmpeg/postproc-55.dll
+JVTWpf/ffmpeg/swresample-3.dll
+JVTWpf/ffmpeg/swscale-5.dll
