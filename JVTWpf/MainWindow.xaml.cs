@@ -28,6 +28,7 @@ namespace JVTWpf
         // Add encoder progress bar instead of freezing the UI while ffmpeg is busy.
         // Add support for adding custom audio tracks into the clips (based on audio merging feature)
         // Check if we're rendering same files with same settings again in clipmanager, skip unnecessary encoding jobs.
+        // Add passing selected current clip from manager to mainwindow so user can preview which clip is which and change in/out position if needed instead of manual edit
         public MainWindow()
         {
             Unosquare.FFME.Library.FFmpegDirectory = Environment.CurrentDirectory + @"\ffmpeg";
@@ -143,12 +144,29 @@ namespace JVTWpf
 
             managerWindow = new ClipsManager(videoClips);
             managerWindow.Closed += ManagerWindow_Closed;
+            managerWindow.dataGridClips.SelectionChanged += DataGridClips_SelectionChanged;
             managerWindow.Show();
+        }
+
+        private bool requestClipLoad = false;
+        private void DataGridClips_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            foreach(VideoClip selectedClip in e.AddedItems)
+            {
+                Console.WriteLine("Selected: " + selectedClip.OutputName);
+                loadVideo(selectedClip.filePath);
+                requestClipLoad = true;
+                currentClip = selectedClip;
+                // Update UI here for the selected clip
+                //currentClip = selectedClip;
+                //loadvid
+            }
         }
 
         private void ManagerWindow_Closed(object sender, EventArgs e)
         {
             managerWindow.Closed -= ManagerWindow_Closed;
+            managerWindow.dataGridClips.SelectionChanged -= DataGridClips_SelectionChanged;
             managerWindow = null;
         }
 
@@ -177,11 +195,6 @@ namespace JVTWpf
             AddClip();
         }
 
-        private void LoadClip(int clipNumber)
-        {
-            // Add support to load existing clip from the list we have made during this session.
-        }
-
         private void AddClip()
         {
             if (!mediaReadyToPlay)
@@ -195,6 +208,8 @@ namespace JVTWpf
             videoClips.Add(currentClip);
             if (managerWindow != null)
                 managerWindow.RefreshDatagrid();
+            // we're adding new clips, not editing current one anymore
+            requestClipLoad = false;
             resetInterface();
         }
 
@@ -219,6 +234,7 @@ namespace JVTWpf
                 return;
             }
             currentClip.End = ffmePlayer.Position;
+            currentClip.Length = currentClip.End - currentClip.Start;
             Console.WriteLine("Selecting clip end at " + currentClip.End);
             playerTimeSliderCustom.EndSlider.Value = currentClip.End.TotalMilliseconds;
         }
@@ -238,10 +254,13 @@ namespace JVTWpf
             if (ffmePlayer.Position >= currentClip.End)
             {
                 Console.WriteLine("ERROR: Clip is set to start after it ends");
+                // add check if our reposition is valid
+                //ffmePlayer.Position = currentClip.End - TimeSpan.FromSeconds(1);
                 resetInterface();
                 return;
             }
             currentClip.Start = ffmePlayer.Position;
+            currentClip.Length = currentClip.End - currentClip.Start;
             Console.WriteLine("Selecting clip start at " + currentClip.Start);
             playerTimeSliderCustom.StartSlider.Value = currentClip.Start.TotalMilliseconds;
             //Console.WriteLine("startslider value: " + playerTimeSliderCustom.StartSlider.Value);
@@ -313,30 +332,34 @@ namespace JVTWpf
         {
             Console.WriteLine("Media ready to play");
             mediaReadyToPlay = true;
-            resetInterface();
-           // Console.WriteLine("Codec: " + ffmePlayer.VideoCodec);
-            currentClip.inputFileCodec = ffmePlayer.VideoCodec;
-            Console.WriteLine("has audio : " + ffmePlayer.HasAudio);
-            currentClip.HasAudio = ffmePlayer.HasAudio;
+            if(requestClipLoad)
+            {
+                UpdateInterface();
+                ffmePlayer.Position = currentClip.Start;
+            }
+            else
+            {
+                resetInterface();
+                // Console.WriteLine("Codec: " + ffmePlayer.VideoCodec);
+                currentClip.inputFileCodec = ffmePlayer.VideoCodec;
+                Console.WriteLine("has audio : " + ffmePlayer.HasAudio);
+                currentClip.HasAudio = ffmePlayer.HasAudio;
+            }
         }
 
-       /* private void resetCurrentClip()
+        private void UpdateInterface()
         {
-            currentClip = new VideoClip();
-            currentClip.filePath = ffmePlayer.MediaInfo.MediaSource;
-            currentClip.OutputName = System.IO.Path.GetFileName(currentClip.filePath);
-            currentClip.Volume = 100;
-            currentClip.Encode = true;
-            currentClip.Start = TimeSpan.Zero;
-            currentClip.End = ffmePlayer.MediaInfo.Duration;
-            if (ffmePlayer.MediaInfo.Streams.Count >= 3) // Has extra audio tracks/streams
-            {
-                currentClip.MultiTrackAudio = true;
-                currentClip.MergeAudioTracks = true;
-                //Console.WriteLine("Multiple audio tracks detected");
-            }
-        }*/
-
+            playerTimeSliderCustom.CurrentSlider.Maximum = ffmePlayer.MediaInfo.Duration.TotalMilliseconds;
+            playerTimeSliderCustom.CurrentSlider.Minimum = 0;
+            playerTimeSliderCustom.Maximum = ffmePlayer.MediaInfo.Duration.TotalMilliseconds;
+            playerTimeSliderCustom.Minimum = 0;
+            playerTimeSliderCustom.EndSlider.Maximum = ffmePlayer.MediaInfo.Duration.TotalMilliseconds;
+            playerTimeSliderCustom.EndSlider.Minimum = 0;
+            playerTimeSliderCustom.StartSlider.Maximum = ffmePlayer.MediaInfo.Duration.TotalMilliseconds;
+            playerTimeSliderCustom.StartSlider.Minimum = 0;
+            playerTimeSliderCustom.EndSlider.Value = currentClip.End.TotalMilliseconds;
+            playerTimeSliderCustom.StartSlider.Value = currentClip.Start.TotalMilliseconds;
+        }
         // Reset clip UI and prepare clip info
         private void resetInterface()
         {
@@ -354,6 +377,16 @@ namespace JVTWpf
             playerTimeSliderCustom.EndSlider.Value = playerTimeSliderCustom.Maximum;
             playerTimeSliderCustom.StartSlider.Value = playerTimeSliderCustom.Minimum;
             //Console.WriteLine("Resetting slider max: " + playerTimeSliderCustom.CurrentSlider.Maximum);
+
+            if(requestClipLoad)
+            {
+                currentClip.Start = TimeSpan.Zero;
+                currentClip.End = ffmePlayer.MediaInfo.Duration;
+                currentClip.Length = ffmePlayer.MediaInfo.Duration;
+                Console.WriteLine("Setting clip reset len: " + currentClip.Length);
+                return;
+            }
+
             currentClip = new VideoClip();
             currentClip.filePath = ffmePlayer.MediaInfo.MediaSource;
             currentClip.OutputName = System.IO.Path.GetFileName(currentClip.filePath);
@@ -361,6 +394,7 @@ namespace JVTWpf
             currentClip.Encode = true;
             currentClip.Start = TimeSpan.Zero;
             currentClip.End = ffmePlayer.MediaInfo.Duration;
+            currentClip.Length = ffmePlayer.MediaInfo.Duration;
             // Console.WriteLine("Stream count: " + ffmePlayer.MediaInfo.Streams.Count);
             if (ffmePlayer.MediaInfo.Streams.Count >= 3) // Has extra audio tracks/streams
             {
@@ -449,6 +483,7 @@ namespace JVTWpf
         private void loadVideo(string videoPath)
         {
             Console.WriteLine("Loading video: " + videoPath);
+            requestClipLoad = false;
 
             currentClip = new VideoClip();
             currentClip.filePath = videoPath;
