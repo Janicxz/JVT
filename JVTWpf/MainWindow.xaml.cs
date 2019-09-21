@@ -123,7 +123,7 @@ namespace JVTWpf
                     e.Handled = true;
                     break;
                 case Key.Space:
-                    togglePlayerPause();
+                    togglePlayerPause(false);
                     e.Handled = true;
                     break;
                 default:
@@ -143,12 +143,18 @@ namespace JVTWpf
         {
             //if(managerWindow == null)
             if(!ffmePlayer.IsPaused)
-                togglePlayerPause();
+                togglePlayerPause(true);
 
             managerWindow = new ClipsManager(videoClips);
             managerWindow.Closed += ManagerWindow_Closed;
             managerWindow.dataGridClips.SelectionChanged += DataGridClips_SelectionChanged;
+            managerWindow.buttonEncode.Click += ButtonEncode_Click1;
             managerWindow.Show();
+        }
+
+        private void ButtonEncode_Click1(object sender, RoutedEventArgs e)
+        {
+            ffmePlayer.Pause();
         }
 
         private bool requestClipLoad = false;
@@ -171,6 +177,7 @@ namespace JVTWpf
         {
             managerWindow.Closed -= ManagerWindow_Closed;
             managerWindow.dataGridClips.SelectionChanged -= DataGridClips_SelectionChanged;
+            managerWindow.buttonEncode.Click -= ButtonEncode_Click1;
             managerWindow = null;
         }
 
@@ -215,6 +222,9 @@ namespace JVTWpf
             newClip.Merge = currentClip.Merge;
             newClip.MergeAudioTracks = currentClip.MergeAudioTracks;
             newClip.MultiTrackAudio = currentClip.MultiTrackAudio;
+            newClip.HasAudio = currentClip.HasAudio;
+            newClip.forceOverwrite = currentClip.forceOverwrite;
+            newClip.inputFileCodec = currentClip.inputFileCodec;
             newClip.OutputName = currentClip.OutputName;
             newClip.Start = currentClip.Start;
             newClip.thumbnail = currentClip.thumbnail;
@@ -349,11 +359,18 @@ namespace JVTWpf
                 return;
             }
             Console.WriteLine("Pause toggle clicked!");
-            togglePlayerPause();
+            togglePlayerPause(false);
         }
 
-        private void togglePlayerPause()
+        private void togglePlayerPause(bool forcePause)
         {
+            if(forcePause)
+            {
+                buttonPauseToggle.Content = "▶️ Resume";
+                ffmePlayer.Pause();
+                return;
+            }
+
             buttonPauseToggle.Content = (ffmePlayer.IsPaused) ? "⏸ Pause" : "▶️ Resume";
             if(ffmePlayer.IsPaused)
                 ffmePlayer.Play();
