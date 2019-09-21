@@ -28,11 +28,6 @@ namespace JVTWpf
         FFmpegEncoder encoder;
         public ClipsManager(ObservableCollection<VideoClip> videoClipsList)
         {
-            /*ObservableCollection<VideoClip> clipsList = new ObservableCollection<VideoClip>();
-            foreach(VideoClip clip in videoClipsList )
-            {
-                clipsList.Add(clip);
-            }*/
             InitializeComponent();
             DataContext = videoClips;
             videoClips = videoClipsList;
@@ -41,44 +36,8 @@ namespace JVTWpf
             // this.Closing += ClipsManager_Closing;
             //dataGridClips.DataContext = videoClips;
             dataGridClips.ItemsSource = videoClips;
-           // dataGridClips.
             buttonEncode.Click += ButtonEncode_Click;
             buttonClearClips.Click += ButtonClearClips_Click;
-        }
-
-
-        private void DataGridClips_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-           /* foreach(VideoClip selectedClip in e.AddedItems)
-            {
-                int count = 0;
-                int add1 = 0, add2 = 0;
-                VideoClip clip1 = null, clip2 = null;
-                foreach(VideoClip clip in videoClips)
-                {
-                    if(clip.OutputName == selectedClip.OutputName)
-                    {
-                        // test hardcode swap to first clip in list
-                        clip1 = videoClips[0];
-                        add1 = 0;
-                        clip2 = videoClips[count];
-                        add2 = count;
-                        Console.WriteLine("Swapping");
-                    }
-                    count++;
-                }
-                if(clip1 != null)
-                {
-                    videoClips[add1] = clip2;
-                    videoClips[add2] = clip1;
-                    Console.WriteLine("Swapping2");
-                    RefreshDatagrid();
-                }
-
-                Console.WriteLine(Mouse.DirectlyOver);
-
-                Console.WriteLine("Selected new clip: " + selectedClip.OutputName);
-            }*/
         }
 
         private void DataGridClips_Unloaded(object sender, RoutedEventArgs e)
@@ -119,6 +78,7 @@ namespace JVTWpf
         {
            // dataGridClips.ItemsSource = null;
             //dataGridClips.ItemsSource = videoClips;
+
            // dataGridClips.Items.Refresh();
         }
 
@@ -176,8 +136,6 @@ namespace JVTWpf
             }
 
             RefreshDatagrid();
-            //dataGridClips.Items.Add(new object[] { });
-            //dataGridClips.ItemsSource = videoClips;
             /*foreach (VideoClip clip in videoClips)
             {
                 Console.WriteLine("adding clip to datagrid");

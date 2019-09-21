@@ -252,7 +252,7 @@ namespace JVTWpf
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                Console.WriteLine("Got drag & drop: " + files);
+                Console.WriteLine("Got drag & drop: " + files[0]);
                 loadVideo(files[0]);
             }
         }
@@ -314,6 +314,10 @@ namespace JVTWpf
             Console.WriteLine("Media ready to play");
             mediaReadyToPlay = true;
             resetInterface();
+           // Console.WriteLine("Codec: " + ffmePlayer.VideoCodec);
+            currentClip.inputFileCodec = ffmePlayer.VideoCodec;
+            Console.WriteLine("has audio : " + ffmePlayer.HasAudio);
+            currentClip.HasAudio = ffmePlayer.HasAudio;
         }
 
        /* private void resetCurrentClip()

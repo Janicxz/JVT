@@ -16,6 +16,7 @@ namespace JVTWpf
         private bool _merge;
         private bool _multiTrackAudio;
         private bool _mergeAudioTracks;
+        public bool HasAudio = false;
         private int _volume;
         private TimeSpan _start;
         private TimeSpan _end;
@@ -110,6 +111,8 @@ namespace JVTWpf
                 NotifyPropertyChanged("Length");
             }
         }
+
+        public string inputFileCodec = "";
 
         public bool forceOverwrite = false;
 
