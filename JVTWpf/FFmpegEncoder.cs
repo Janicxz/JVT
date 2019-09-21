@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -10,9 +11,9 @@ namespace JVTWpf
 {
     class FFmpegEncoder
     {
-        private List<VideoClip> videoClips;
+        private ObservableCollection<VideoClip> videoClips;
         private string FFmpegPath = Environment.CurrentDirectory + @"\ffmpeg";
-        public FFmpegEncoder(List<VideoClip> clipsToEncode)
+        public FFmpegEncoder(ObservableCollection<VideoClip> clipsToEncode)
         {
             videoClips = clipsToEncode;
         }
@@ -33,9 +34,14 @@ namespace JVTWpf
             {
                 string inputFilename = clip.filePath;
                 string outputFilename = outputFolder + clip.OutputName;
+                string forceOverwrite = clip.forceOverwrite ? "-y" : "-n";
 
                 if (clip.Merge)
                 {
+                    // Decode each input file on the gpu decoder or else gpu encoder fails.
+                    if (hwAccel)
+                        mergeCommand += string.Format("-vsync 0 -hwaccel cuvid -c:v h264_cuvid -resize {0}x{1} ", videoWidth, videoHeight);
+
                     mergeCommand += string.Format("-i \"{0}\" ", outputFilename);
                     mergeNum++;
                     mergeClips = true;
@@ -85,7 +91,7 @@ namespace JVTWpf
 
                 if (clipVolume != 1.0 && !clip.MergeAudioTracks) // adjust volume only if necessary and only if we didn't already adjust it in audio merge.
                     ffmpegCommand += String.Format("-filter:a \"volume={0}\" ", clipVolume.ToString(CultureInfo.InvariantCulture));
-                ffmpegCommand += String.Format("-ac 2 -c:a aac -b:a 384k -t {0} \"{1}\"", clip.End - clip.Start, outputFilename);
+                ffmpegCommand += String.Format("-ac 2 -c:a aac -b:a 384k -t {0}  {2} \"{1}\"", clip.End - clip.Start, outputFilename, forceOverwrite);
                 if(clip.Encode)
                 {
                     Console.WriteLine("Running ffmpeg with cmd: " + ffmpegCommand);
@@ -95,10 +101,20 @@ namespace JVTWpf
             }
             if(mergeClips)
             {
+
                 // Merge all the selected clips together
                 string mergeFilename = "clips_merged.mp4";
+
+
+                if (hwAccel)
+                    mergeCommand += string.Format("-c:v h264_nvenc ");
+                else
+                    mergeCommand += string.Format("-c:v libx264 -preset medium ");
+
+                mergeCommand += string.Format("-b:v {0}K -maxrate {0}K -framerate {1} ", videoBitrate,videoFramerate);
+                // Always override file for merge clip
+                mergeCommand += string.Format("-filter_complex concat=n={0}:v=1:a=1 -y \"{1}\"", mergeNum, outputFolder + mergeFilename);
                 // build command string
-                mergeCommand += string.Format("-filter_complex concat=n={0}:v=1:a=1 -f mp4 \"{1}\"", mergeNum, outputFolder + mergeFilename);
                 Console.WriteLine("Running ffmpeg with merge cmd: " + mergeCommand);
                 ffmpegCommandExecute(mergeCommand);
             }

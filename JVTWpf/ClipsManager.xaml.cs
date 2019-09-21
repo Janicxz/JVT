@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Data;
 using System.Linq;
 using System.Management;
 using System.Text;
@@ -23,23 +24,61 @@ namespace JVTWpf
     /// </summary>
     public partial class ClipsManager : Window
     {
-        List<VideoClip> videoClips;
+        ObservableCollection<VideoClip> videoClips;
         FFmpegEncoder encoder;
-        public ClipsManager(List<VideoClip> videoClipsList)
+        public ClipsManager(ObservableCollection<VideoClip> videoClipsList)
         {
             /*ObservableCollection<VideoClip> clipsList = new ObservableCollection<VideoClip>();
             foreach(VideoClip clip in videoClipsList )
             {
                 clipsList.Add(clip);
             }*/
-
             InitializeComponent();
+            DataContext = videoClips;
             videoClips = videoClipsList;
             this.Loaded += ClipsManager_Loaded;
             dataGridClips.Unloaded += DataGridClips_Unloaded;
-           // this.Closing += ClipsManager_Closing;
+            // this.Closing += ClipsManager_Closing;
+            //dataGridClips.DataContext = videoClips;
+            dataGridClips.ItemsSource = videoClips;
+           // dataGridClips.
             buttonEncode.Click += ButtonEncode_Click;
             buttonClearClips.Click += ButtonClearClips_Click;
+        }
+
+
+        private void DataGridClips_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+           /* foreach(VideoClip selectedClip in e.AddedItems)
+            {
+                int count = 0;
+                int add1 = 0, add2 = 0;
+                VideoClip clip1 = null, clip2 = null;
+                foreach(VideoClip clip in videoClips)
+                {
+                    if(clip.OutputName == selectedClip.OutputName)
+                    {
+                        // test hardcode swap to first clip in list
+                        clip1 = videoClips[0];
+                        add1 = 0;
+                        clip2 = videoClips[count];
+                        add2 = count;
+                        Console.WriteLine("Swapping");
+                    }
+                    count++;
+                }
+                if(clip1 != null)
+                {
+                    videoClips[add1] = clip2;
+                    videoClips[add2] = clip1;
+                    Console.WriteLine("Swapping2");
+                    RefreshDatagrid();
+                }
+
+                Console.WriteLine(Mouse.DirectlyOver);
+
+                Console.WriteLine("Selected new clip: " + selectedClip.OutputName);
+            }*/
         }
 
         private void DataGridClips_Unloaded(object sender, RoutedEventArgs e)
@@ -78,8 +117,8 @@ namespace JVTWpf
 
         public void RefreshDatagrid()
         {
-            dataGridClips.ItemsSource = null;
-            dataGridClips.ItemsSource = videoClips;
+           // dataGridClips.ItemsSource = null;
+            //dataGridClips.ItemsSource = videoClips;
            // dataGridClips.Items.Refresh();
         }
 

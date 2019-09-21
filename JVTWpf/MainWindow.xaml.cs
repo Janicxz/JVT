@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -24,8 +25,9 @@ namespace JVTWpf
     public partial class MainWindow : Window
     {
         // TODO: FIXME: random crashing on close due to child window (ClipsManager)
-        // http://www.thejoyofcode.com/Creating_a_Range_Slider_in_WPF_and_other_cool_tips_and_tricks_for_UserControls_.aspx
-        // Add clip reordering support in manage for merging (simple video editing)
+        // Add encoder progress bar instead of freezing the UI while ffmpeg is busy.
+        // Add support for adding custom audio tracks into the clips (based on audio merging feature)
+        // Check if we're rendering same files with same settings again in clipmanager, skip unnecessary encoding jobs.
         public MainWindow()
         {
             Unosquare.FFME.Library.FFmpegDirectory = Environment.CurrentDirectory + @"\ffmpeg";
@@ -36,7 +38,7 @@ namespace JVTWpf
 
         private bool mediaReadyToPlay = false;
         private VideoClip currentClip;
-        List<VideoClip> videoClips;
+        ObservableCollection<VideoClip> videoClips;
         ClipsManager managerWindow;
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -56,13 +58,14 @@ namespace JVTWpf
             this.AllowDrop = true;
             //playerTimeSlider.IsMoveToPointEnabled = true;
             ffmePlayer.LoopingBehavior = Unosquare.FFME.Common.MediaPlaybackState.Play;
-            videoClips = new List<VideoClip>();
+            videoClips = new ObservableCollection<VideoClip>();
 
             //managerWindow = new ClipsManager(videoClips);
 
 
-
-            //loadVideo(Environment.CurrentDirectory + @"\test2.webm");
+#if DEBUG
+            loadVideo(Environment.CurrentDirectory + @"\test2.webm");
+#endif
         }
 
         private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
