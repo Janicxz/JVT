@@ -11,6 +11,15 @@
         <DockPanel Margin="10,10,10,72" Background="#FF9C9A9A" LastChildFill="False">
             <DataGrid x:Name="dataGridClips" dd:DragDrop.IsDragSource="True" dd:DragDrop.IsDropTarget="True" SelectionMode="Single" DockPanel.Dock="Top" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False">
                 <DataGrid.Columns>
+                    
+                    <DataGridTemplateColumn Header="Preview" Width="SizeToCells" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Image Height="25" Width="50" Source="{Binding thumbnail}"></Image>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    
                     <DataGridCheckBoxColumn x:Name="Encode" Binding="{Binding Encode}" Header="Encode"/>
                     <DataGridTextColumn x:Name="Volume" Binding="{Binding Volume}" Header="Volume (0-250)"/>
                     <DataGridCheckBoxColumn x:Name="MergeAudio" Binding="{Binding MergeAudioTracks}" Header="Combine audio tracks"/>

@@ -42,6 +42,9 @@ namespace JVTWpf
         ObservableCollection<VideoClip> videoClips;
         ClipsManager managerWindow;
 
+        private string currentStartThumbFilename = "";
+        private BitmapSource currentStartThumbnail;
+
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             ffmePlayer.MediaOpening += FfmePlayer_MediaOpening;
@@ -153,6 +156,7 @@ namespace JVTWpf
         {
             foreach(VideoClip selectedClip in e.AddedItems)
             {
+                // FIXME: Clicking on same clip that we added and adding new identical clip causes duplicate file check to get stuck in infinite loop
                 Console.WriteLine("Selected: " + selectedClip.OutputName);
                 loadVideo(selectedClip.filePath);
                 requestClipLoad = true;
@@ -202,9 +206,34 @@ namespace JVTWpf
                 Console.WriteLine("No media loaded yet. Can't add clip");
                 return;
             }
+            // Create new reference so we don't compare to our current clip already on the list
+            VideoClip newClip = new VideoClip();
+            newClip.Encode = currentClip.Encode;
+            newClip.End = currentClip.End;
+            newClip.filePath = currentClip.filePath;
+            newClip.Length = currentClip.Length;
+            newClip.Merge = currentClip.Merge;
+            newClip.MergeAudioTracks = currentClip.MergeAudioTracks;
+            newClip.MultiTrackAudio = currentClip.MultiTrackAudio;
+            newClip.OutputName = currentClip.OutputName;
+            newClip.Start = currentClip.Start;
+            newClip.thumbnail = currentClip.thumbnail;
+            newClip.Volume = currentClip.Volume;
+            currentClip = null;
+            currentClip = newClip;
+
             Console.WriteLine("Adding clip {0}-{1} ", currentClip.Start, currentClip.End);
             checkFileForDuplicate();
             currentClip.Length = currentClip.End - currentClip.Start;
+            // Add the first thumbnail we generated on load if we didn't grab a thumbnail at starting frame
+            if(currentClip.thumbnail == null)
+            {
+                Console.WriteLine("No thumbnail detected on current clip, trying to add thumbnail from initial load");
+                if(currentClip.filePath == currentStartThumbFilename) // Only add thumbnail from start if we're still dealing with same file
+                {
+                    currentClip.thumbnail = currentStartThumbnail;
+                }
+            }
             videoClips.Add(currentClip);
             if (managerWindow != null)
                 managerWindow.RefreshDatagrid();
@@ -259,11 +288,47 @@ namespace JVTWpf
                 resetInterface();
                 return;
             }
+            // generate thumbnail for manager window
+            AddThumbnailToCurrentClip(false);
+
             currentClip.Start = ffmePlayer.Position;
             currentClip.Length = currentClip.End - currentClip.Start;
             Console.WriteLine("Selecting clip start at " + currentClip.Start);
             playerTimeSliderCustom.StartSlider.Value = currentClip.Start.TotalMilliseconds;
             //Console.WriteLine("startslider value: " + playerTimeSliderCustom.StartSlider.Value);
+        }
+
+        private void AddThumbnailToCurrentClip(bool startThumbnail)
+        {
+            Size playerSize = ffmePlayer.RenderSize;
+            RenderTargetBitmap bmp = new RenderTargetBitmap((int)playerSize.Width, (int)playerSize.Height, 96, 96, PixelFormats.Default);
+            ffmePlayer.Measure(ffmePlayer.RenderSize);
+            ffmePlayer.Arrange(new Rect(new Point(0, 0), ffmePlayer.RenderSize));
+            //dockPanelPlayerContainer.UpdateLayout();
+            ffmePlayer.UpdateLayout();
+            bmp.Render(ffmePlayer);
+            //Image previewImage = new Image();
+            PngBitmapEncoder img = new PngBitmapEncoder();
+            img.Frames.Add(BitmapFrame.Create(bmp));
+            BitmapImage bmpImg = new BitmapImage();
+            using (MemoryStream ms = new MemoryStream())
+            {
+                img.Save(ms);
+                ms.Seek(0, SeekOrigin.Begin);
+
+                bmpImg.BeginInit();
+                bmpImg.CacheOption = BitmapCacheOption.OnLoad;
+                bmpImg.StreamSource = ms;
+                bmpImg.EndInit();
+            }
+            if(startThumbnail)
+            {
+                currentStartThumbFilename = currentClip.filePath;
+                Console.WriteLine("Adding start thumbnail for file " + currentStartThumbFilename);
+                currentStartThumbnail = bmpImg;
+            }
+            else
+                currentClip.thumbnail = bmpImg;
         }
 
         private void MainWindow_Drop(object sender, DragEventArgs e)
@@ -298,6 +363,7 @@ namespace JVTWpf
 
         private void FfmePlayer_PositionChanged(object sender, Unosquare.FFME.Common.PositionChangedEventArgs e)
         {
+            //Console.WriteLine("Current pos: " + e.Position.TotalMilliseconds);
             double currentPosition = 0;
             //Console.WriteLine("Media position: " + e.Position);
             if (e.Position.TotalMilliseconds > playerTimeSliderCustom.CurrentSlider.Maximum)
@@ -310,6 +376,17 @@ namespace JVTWpf
             // ignore valuechanged event for automatic playback slider changes.
             //playerTimeSlider.ValueChanged -= PlayerTimeSlider_ValueChanged;
             //playerTimeSlider.Value = currentPosition;
+
+            // Add a thumbnail from start of the file if we don't have a thumbnail yet
+            //  within 10-100 ms
+            if(currentPosition >= 10 && currentPosition < 100 && ffmePlayer.RenderSize.Width > 0 && ffmePlayer.RenderSize.Height > 0)
+            {
+                if(currentStartThumbnail == null)
+                {
+                    AddThumbnailToCurrentClip(true);
+                }
+            }
+
             playerTimeSliderCustom.CurrentSlider.ValueChanged -= CurrentSlider_ValueChanged;
             playerTimeSliderCustom.CurrentSlider.Value = currentPosition;
             playerTimeSliderCustom.CurrentSlider.ValueChanged += CurrentSlider_ValueChanged;
@@ -332,7 +409,8 @@ namespace JVTWpf
         {
             Console.WriteLine("Media ready to play");
             mediaReadyToPlay = true;
-            if(requestClipLoad)
+
+            if (requestClipLoad)
             {
                 UpdateInterface();
                 ffmePlayer.Position = currentClip.Start;
@@ -341,9 +419,6 @@ namespace JVTWpf
             {
                 resetInterface();
                 // Console.WriteLine("Codec: " + ffmePlayer.VideoCodec);
-                currentClip.inputFileCodec = ffmePlayer.VideoCodec;
-                Console.WriteLine("has audio : " + ffmePlayer.HasAudio);
-                currentClip.HasAudio = ffmePlayer.HasAudio;
             }
         }
 
@@ -378,16 +453,16 @@ namespace JVTWpf
             playerTimeSliderCustom.StartSlider.Value = playerTimeSliderCustom.Minimum;
             //Console.WriteLine("Resetting slider max: " + playerTimeSliderCustom.CurrentSlider.Maximum);
 
-            if(requestClipLoad)
+            /*if(requestClipLoad)
             {
                 currentClip.Start = TimeSpan.Zero;
                 currentClip.End = ffmePlayer.MediaInfo.Duration;
                 currentClip.Length = ffmePlayer.MediaInfo.Duration;
                 Console.WriteLine("Setting clip reset len: " + currentClip.Length);
                 return;
-            }
-
-            currentClip = new VideoClip();
+            }*/
+            if(!requestClipLoad)
+                currentClip = new VideoClip();
             currentClip.filePath = ffmePlayer.MediaInfo.MediaSource;
             currentClip.OutputName = System.IO.Path.GetFileName(currentClip.filePath);
             currentClip.Volume = 100;
@@ -395,6 +470,10 @@ namespace JVTWpf
             currentClip.Start = TimeSpan.Zero;
             currentClip.End = ffmePlayer.MediaInfo.Duration;
             currentClip.Length = ffmePlayer.MediaInfo.Duration;
+
+            currentClip.inputFileCodec = ffmePlayer.VideoCodec;
+            Console.WriteLine("has audio : " + ffmePlayer.HasAudio);
+            currentClip.HasAudio = ffmePlayer.HasAudio;
             // Console.WriteLine("Stream count: " + ffmePlayer.MediaInfo.Streams.Count);
             if (ffmePlayer.MediaInfo.Streams.Count >= 3) // Has extra audio tracks/streams
             {
@@ -432,6 +511,7 @@ namespace JVTWpf
             bool nameExists = true;
             bool nameUsedInList = false;
             string outNameOriginal = currentClip.OutputName;
+            Console.WriteLine("Outname original: " + outNameOriginal);
             int nameCount = 1;
             
             // Loop through names until filename doesn't exist on disk and it's not used by any clip in cliplist.
@@ -459,7 +539,7 @@ namespace JVTWpf
                     //Console.WriteLine("Filename is free: " + directoryName + "\\" + currentClip.OutputName);
                     nameExists = false;
                 }
-                // We found free name, now check if its used in list
+                // We found free name, now check if its used in list, it will be already split with num_name
                 if (!nameExists)
                 {
                     // Reset and try again with new name
@@ -468,9 +548,18 @@ namespace JVTWpf
                     {
                         if(clip.OutputName == currentClip.OutputName)
                         {
+                            Console.WriteLine("Name used in list: " + currentClip.OutputName + " list clip name: " + clip.OutputName);
                             // Found a clip of same name in list, rename and try again
                             nameUsedInList = true;
-                            currentClip.OutputName = nameCount + "_" + outNameOriginal;
+                            Console.WriteLine(currentClip.OutputName.Split('_').Length);
+                            if(currentClip.OutputName.Split('_').Length <= 1)
+                            {
+                                currentClip.OutputName = nameCount + "_" + outNameOriginal;
+                            }
+                            else
+                            {
+                                currentClip.OutputName = nameCount + "_" + currentClip.OutputName.Split('_')[1];
+                            }
                             nameCount++;
                             break;
                         }
@@ -490,6 +579,7 @@ namespace JVTWpf
             currentClip.OutputName = System.IO.Path.GetFileName(videoPath);
             currentClip.Volume = 100;
             currentClip.Encode = true;
+            currentStartThumbnail = null;
 
             ffmePlayer.Source = new Uri(videoPath);
             ffmePlayer.Play();

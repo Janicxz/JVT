@@ -5,6 +5,9 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace JVTWpf
 {
@@ -21,6 +24,23 @@ namespace JVTWpf
         private TimeSpan _start;
         private TimeSpan _end;
         private TimeSpan _length;
+        private BitmapSource _thumbnail;
+       // public BitmapSource ThumbnailStart;
+        public BitmapSource thumbnail
+        {
+            get
+            {
+              //  if (_thumbnail == null)
+              //      return ThumbnailStart;
+              //  else
+                    return _thumbnail;
+            }
+            set
+            {
+                _thumbnail = value;
+                NotifyPropertyChanged("thumbnail");
+            }
+        }
         public string filePath
         {
             get { return _filePath; }
