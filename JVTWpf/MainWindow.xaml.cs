@@ -28,7 +28,6 @@ namespace JVTWpf
         // Add encoder progress bar instead of freezing the UI while ffmpeg is busy.
         // Add support for adding custom audio tracks into the clips (based on audio merging feature)
         // Check if we're rendering same files with same settings again in clipmanager, skip unnecessary encoding jobs.
-        // Add passing selected current clip from manager to mainwindow so user can preview which clip is which and change in/out position if needed instead of manual edit
         public MainWindow()
         {
             Unosquare.FFME.Library.FFmpegDirectory = Environment.CurrentDirectory + @"\ffmpeg";
@@ -47,6 +46,15 @@ namespace JVTWpf
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            /*
+#if RELEASE
+            FileStream fs = new FileStream("consolelog.log", FileMode.Create);
+            StreamWriter sw = new StreamWriter(fs);
+            sw.AutoFlush = true;
+            Console.SetOut(sw);
+            Console.SetError(sw);
+#endif
+*/
             ffmePlayer.MediaOpening += FfmePlayer_MediaOpening;
             ffmePlayer.MediaReady += FfmePlayer_MediaReady;
             ffmePlayer.PositionChanged += FfmePlayer_PositionChanged;
@@ -63,6 +71,7 @@ namespace JVTWpf
             //playerTimeSlider.IsMoveToPointEnabled = true;
             ffmePlayer.LoopingBehavior = Unosquare.FFME.Common.MediaPlaybackState.Play;
             videoClips = new ObservableCollection<VideoClip>();
+
 
             //managerWindow = new ClipsManager(videoClips);
 
@@ -255,7 +264,6 @@ namespace JVTWpf
         private void ButtonClipEnd_Click(object sender, RoutedEventArgs e)
         {
             SetClipEnd();
-            //Console.WriteLine("endslider value: " + playerTimeSliderCustom.EndSlider.Value);
         }
 
         private void SetClipEnd()
@@ -314,10 +322,9 @@ namespace JVTWpf
             RenderTargetBitmap bmp = new RenderTargetBitmap((int)playerSize.Width, (int)playerSize.Height, 96, 96, PixelFormats.Default);
             ffmePlayer.Measure(ffmePlayer.RenderSize);
             ffmePlayer.Arrange(new Rect(new Point(0, 0), ffmePlayer.RenderSize));
-            //dockPanelPlayerContainer.UpdateLayout();
             ffmePlayer.UpdateLayout();
+
             bmp.Render(ffmePlayer);
-            //Image previewImage = new Image();
             PngBitmapEncoder img = new PngBitmapEncoder();
             img.Frames.Add(BitmapFrame.Create(bmp));
             BitmapImage bmpImg = new BitmapImage();
@@ -389,12 +396,9 @@ namespace JVTWpf
                 currentPosition = 0;
             else
                 currentPosition = e.Position.TotalMilliseconds;
-            //Console.WriteLine("Setting slider pos: " + currentPosition);
-            // ignore valuechanged event for automatic playback slider changes.
-            //playerTimeSlider.ValueChanged -= PlayerTimeSlider_ValueChanged;
-            //playerTimeSlider.Value = currentPosition;
 
             // Add a thumbnail from start of the file if we don't have a thumbnail yet
+            // FIXME: Find a way to check if the player is showing any video frames yet, this method is unreliable. (results in gray/empty previews sometimes)
             //  within 10-100 ms
             if(currentPosition >= 10 && currentPosition < 100 && ffmePlayer.RenderSize.Width > 0 && ffmePlayer.RenderSize.Height > 0)
             {
@@ -404,10 +408,10 @@ namespace JVTWpf
                 }
             }
 
+            // ignore valuechanged event for player position update
             playerTimeSliderCustom.CurrentSlider.ValueChanged -= CurrentSlider_ValueChanged;
             playerTimeSliderCustom.CurrentSlider.Value = currentPosition;
             playerTimeSliderCustom.CurrentSlider.ValueChanged += CurrentSlider_ValueChanged;
-            //playerTimeSlider.ValueChanged += PlayerTimeSlider_ValueChanged;
         }
 
         private void CurrentSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -415,13 +419,6 @@ namespace JVTWpf
             Console.WriteLine("Slider click at {0}, changing player position..", e.NewValue);
             ffmePlayer.Position = TimeSpan.FromMilliseconds(e.NewValue);
         }
-        /*
-        private void PlayerTimeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            Console.WriteLine("Slider click at {0}, changing player position..", playerTimeSlider.Value);
-            ffmePlayer.Position = TimeSpan.FromMilliseconds(playerTimeSlider.Value);
-        }
-        */
         private void FfmePlayer_MediaReady(object sender, EventArgs e)
         {
             Console.WriteLine("Media ready to play");
@@ -455,9 +452,6 @@ namespace JVTWpf
         // Reset clip UI and prepare clip info
         private void resetInterface()
         {
-            //playerTimeSlider.Maximum = ffmePlayer.MediaInfo.Duration.TotalMilliseconds;
-           
-
             playerTimeSliderCustom.CurrentSlider.Maximum = ffmePlayer.MediaInfo.Duration.TotalMilliseconds;
             playerTimeSliderCustom.CurrentSlider.Minimum = 0;
             playerTimeSliderCustom.Maximum = ffmePlayer.MediaInfo.Duration.TotalMilliseconds;
@@ -491,97 +485,43 @@ namespace JVTWpf
             currentClip.inputFileCodec = ffmePlayer.VideoCodec;
             Console.WriteLine("has audio : " + ffmePlayer.HasAudio);
             currentClip.HasAudio = ffmePlayer.HasAudio;
-            // Console.WriteLine("Stream count: " + ffmePlayer.MediaInfo.Streams.Count);
             if (ffmePlayer.MediaInfo.Streams.Count >= 3) // Has extra audio tracks/streams
             {
                 currentClip.MultiTrackAudio = true;
                 currentClip.MergeAudioTracks = true;
                 Console.WriteLine("Multiple audio tracks detected");
             }
-            // FIXME: finish this slider fuckery
-            /*Point sliderPos = playerTimeSlider.PointToScreen(new Point(0d, 0d));
-            Console.WriteLine("sliderpos:" + sliderPos);
-            Console.WriteLine("Slider width " + playerTimeSlider.ActualWidth + " final: " + (sliderPos.X - playerTimeSlider.ActualWidth));
-            Console.WriteLine("label: " + labelStart.Margin);
-            labelStart.Margin = new Thickness(sliderPos.X, sliderPos.Y, 0, 0);
-            Console.WriteLine("after: " + labelStart.Margin);*/
-            //labelMark1.Location = new Point(trackBarPlayer.Location.X, trackBarPlayer.Location.Y + 20); // 12
-            //labelMarkEnd.Location = new Point(trackBarPlayer.Location.X + trackBarPlayer.Width - 20, trackBarPlayer.Location.Y + 20); // 771
         }
 
         private void checkFileForDuplicate()
         {
             // Force mp4 output for now
             // TODO: Add proper format selection
-            if (System.IO.Path.GetExtension(currentClip.OutputName) != ".mp4")
+            string outputFormat = ".mp4";
+
+            if (System.IO.Path.GetExtension(currentClip.OutputName) != outputFormat)
             {
-                Console.WriteLine("File extension not .mp4, changing.. ({0})", currentClip.OutputName);
-                currentClip.OutputName = System.IO.Path.GetFileNameWithoutExtension(currentClip.OutputName);
-                currentClip.OutputName += ".mp4";
+                Console.WriteLine("File extension not {1}, changing.. ({0})", currentClip.OutputName, outputFormat);
+                currentClip.OutputName = System.IO.Path.GetFileNameWithoutExtension(currentClip.OutputName); // This does not check the path properly, should be directoryName + "\\" + currentClip.OutputName?
+                currentClip.OutputName += outputFormat;
             }
             Console.WriteLine("Checking name for duplicate {0}", currentClip.OutputName);
 
             string directoryName = Environment.CurrentDirectory; //System.IO.Path.GetDirectoryName(currentClip.filePath);
             directoryName += "\\videos";
 
-            // make sure file doesnt exist on disk AND we don't have other clip in queue for same name
-            bool nameExists = true;
-            bool nameUsedInList = false;
-            string outNameOriginal = currentClip.OutputName;
-            Console.WriteLine("Outname original: " + outNameOriginal);
-            int nameCount = 1;
-            
-            // Loop through names until filename doesn't exist on disk and it's not used by any clip in cliplist.
-            while (nameExists || nameUsedInList)
+            int fileCount = 1;
+            while(File.Exists(directoryName + "\\" + currentClip.OutputName))
             {
-                // Don't loop through this again if we found a free name
-                if (File.Exists(directoryName + "\\" + currentClip.OutputName) && nameExists)
-                {
-                    Console.WriteLine("File name already used: " + directoryName + "\\" + currentClip.OutputName);
-                    if(!File.Exists(directoryName + "\\" + nameCount + "_" + currentClip.OutputName))
-                    {
-                        nameExists = false;
-                        currentClip.OutputName = nameCount + "_" + currentClip.OutputName;
-                        Console.WriteLine("Found free name not on disk: " + directoryName + "\\" + currentClip.OutputName);
-                        //outNameOriginal = nameCount + "_" + outNameOriginal;
-                    }
-                    else
-                    {
-                        Console.WriteLine("found file on disk: " + directoryName + "\\" + currentClip.OutputName);
-                        nameCount++;
-                    }
-                }
-                else
-                {
-                    //Console.WriteLine("Filename is free: " + directoryName + "\\" + currentClip.OutputName);
-                    nameExists = false;
-                }
-                // We found free name, now check if its used in list, it will be already split with num_name
-                if (!nameExists)
-                {
-                    // Reset and try again with new name
-                    nameUsedInList = false;
-                    foreach (VideoClip clip in videoClips)
-                    {
-                        if(clip.OutputName == currentClip.OutputName)
-                        {
-                            Console.WriteLine("Name used in list: " + currentClip.OutputName + " list clip name: " + clip.OutputName);
-                            // Found a clip of same name in list, rename and try again
-                            nameUsedInList = true;
-                            Console.WriteLine(currentClip.OutputName.Split('_').Length);
-                            if(currentClip.OutputName.Split('_').Length <= 1)
-                            {
-                                currentClip.OutputName = nameCount + "_" + outNameOriginal;
-                            }
-                            else
-                            {
-                                currentClip.OutputName = nameCount + "_" + currentClip.OutputName.Split('_')[1];
-                            }
-                            nameCount++;
-                            break;
-                        }
-                    }
-                }
+                Console.WriteLine("File exists: {0}, renaming to {1}", currentClip.OutputName, fileCount + "_" + System.IO.Path.GetFileName(currentClip.filePath));
+                currentClip.OutputName = fileCount + "_" + System.IO.Path.GetFileName(currentClip.filePath);
+                fileCount++;
+            }
+            while(videoClips.Any(item => item.OutputName == currentClip.OutputName))
+            {
+                Console.WriteLine("Name used in list: {0}, renaming to {1}", currentClip.OutputName, fileCount + "_" + System.IO.Path.GetFileNameWithoutExtension(currentClip.filePath) + outputFormat);
+                currentClip.OutputName = fileCount + "_" + System.IO.Path.GetFileNameWithoutExtension(currentClip.filePath) + outputFormat;
+                fileCount++;
             }
             Console.WriteLine("Clip new name {0}", currentClip.OutputName);
         }

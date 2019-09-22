@@ -76,9 +76,10 @@ namespace JVTWpf
 
         public void RefreshDatagrid()
         {
-           // dataGridClips.ItemsSource = null;
+            // dataGridClips.ItemsSource = null;
             //dataGridClips.ItemsSource = videoClips;
-
+            Console.WriteLine("Refreshing datagrid, clips: " + videoClips.Count);
+            CollectionViewSource.GetDefaultView(dataGridClips.ItemsSource).Refresh();
            // dataGridClips.Items.Refresh();
         }
 
