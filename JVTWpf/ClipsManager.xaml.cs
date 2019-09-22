@@ -89,10 +89,10 @@ namespace JVTWpf
             int resW, resH, bitrate, framerate;
             try
             {
-                resW = int.Parse(((ComboBoxItem)comboBoxResolution.SelectedItem).Content.ToString().Split('x')[0]);
-                resH = int.Parse(((ComboBoxItem)comboBoxResolution.SelectedItem).Content.ToString().Split('x')[1]);
-                bitrate = int.Parse(((ComboBoxItem)comboBoxBitrate.SelectedItem).Content.ToString());
-                framerate = int.Parse(((ComboBoxItem)comboBoxFPS.SelectedItem).Content.ToString());
+                resW = int.Parse(comboBoxResolution.Text.Split('x')[0]);
+                resH = int.Parse(comboBoxResolution.Text.Split('x')[1]);
+                bitrate = int.Parse(comboBoxBitrate.Text);
+                framerate = int.Parse(comboBoxFPS.Text);
             }
             catch (Exception ex)
             {

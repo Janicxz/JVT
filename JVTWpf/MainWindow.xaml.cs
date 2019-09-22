@@ -513,8 +513,8 @@ namespace JVTWpf
             int fileCount = 1;
             while(File.Exists(directoryName + "\\" + currentClip.OutputName))
             {
-                Console.WriteLine("File exists: {0}, renaming to {1}", currentClip.OutputName, fileCount + "_" + System.IO.Path.GetFileName(currentClip.filePath));
-                currentClip.OutputName = fileCount + "_" + System.IO.Path.GetFileName(currentClip.filePath);
+                Console.WriteLine("File exists: {0}, renaming to {1}", currentClip.OutputName, fileCount + "_" + System.IO.Path.GetFileNameWithoutExtension(currentClip.filePath) + outputFormat);
+                currentClip.OutputName = fileCount + "_" + System.IO.Path.GetFileNameWithoutExtension(currentClip.filePath) + outputFormat;
                 fileCount++;
             }
             while(videoClips.Any(item => item.OutputName == currentClip.OutputName))
