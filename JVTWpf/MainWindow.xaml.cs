@@ -66,6 +66,7 @@ namespace JVTWpf
             buttonMuteToggle.Click += ButtonMuteToggle_Click;
             buttonEncode.Click += ButtonEncode_Click;
             this.PreviewKeyDown += MainWindow_PreviewKeyDown;
+            this.PreviewMouseWheel += MainWindow_PreviewMouseWheel;
             this.Closing += MainWindow_Closing;
             this.AllowDrop = true;
             //playerTimeSlider.IsMoveToPointEnabled = true;
@@ -79,6 +80,19 @@ namespace JVTWpf
 #if DEBUG
             loadVideo(Environment.CurrentDirectory + @"\test2.webm");
 #endif
+        }
+
+        private void MainWindow_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            //Console.WriteLine("Scrolled: " + e.Delta);
+            //Console.WriteLine("scrollbar: " + scrollViewerControls.ComputedHorizontalScrollBarVisibility);
+            double newWidth = Math.Max((dockPanelPlayerControls.ActualWidth + e.Delta), 0);
+            if (newWidth < this.MinWidth)
+                newWidth = dockPanelPlayerControls.Width = Double.NaN; // Set to Auto width
+            if(scrollViewerControls.ComputedHorizontalScrollBarVisibility == Visibility.Collapsed && e.Delta < 0)
+                newWidth = Double.NaN; // Set to Auto width
+            dockPanelPlayerControls.Width = newWidth;
+           //Console.WriteLine("Width: " + dockPanelPlayerControls.Width);
         }
 
         private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
