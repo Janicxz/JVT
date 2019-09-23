@@ -37,7 +37,15 @@ namespace JVTWpf
             //dataGridClips.DataContext = videoClips;
             dataGridClips.ItemsSource = videoClips;
             buttonEncode.Click += ButtonEncode_Click;
+            dataGridContextDelete.Click += DataGridContextDelete_Click;
             buttonClearClips.Click += ButtonClearClips_Click;
+        }
+
+        private void DataGridContextDelete_Click(object sender, RoutedEventArgs e)
+        {
+            if (dataGridClips.SelectedItem == null) return;
+
+            videoClips.Remove((VideoClip)dataGridClips.SelectedItem);
         }
 
         private void DataGridClips_Unloaded(object sender, RoutedEventArgs e)
