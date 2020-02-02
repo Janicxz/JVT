@@ -172,7 +172,14 @@ namespace JVTWpf
             managerWindow.Closed += ManagerWindow_Closed;
             managerWindow.dataGridClips.SelectionChanged += DataGridClips_SelectionChanged;
             managerWindow.buttonEncode.Click += ButtonEncode_Click1;
+            managerWindow.OnEncodingBegin += ManagerWindow_OnEncodingBegin;
             managerWindow.Show();
+        }
+
+        private void ManagerWindow_OnEncodingBegin(object sender, EventArgs e)
+        {
+            Console.WriteLine("Received encoding begin event, pausing video.");
+            ffmePlayer.Pause();
         }
 
         private void ButtonEncode_Click1(object sender, RoutedEventArgs e)

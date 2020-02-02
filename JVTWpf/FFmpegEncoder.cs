@@ -9,10 +9,28 @@ using System.Threading.Tasks;
 
 namespace JVTWpf
 {
+    public class EncoderProgressEventArgs : EventArgs
+    {
+        /// <summary>
+        /// The number of clips encoded so far.
+        /// </summary>
+        public int ClipsEncoded { get; set; }
+        /// <summary>
+        /// The number of clips to encode
+        /// </summary>
+        public int ClipsTotal { get; set; }
+        /// <summary>
+        /// The progress of current encoding job (0-100).
+        /// </summary>
+        public int CurrentClipProcess { get; set; }
+    }
+
     class FFmpegEncoder
     {
         private ObservableCollection<VideoClip> videoClips;
         private string FFmpegPath = Environment.CurrentDirectory + @"\ffmpeg";
+        public event EventHandler OnEncodingFinished = delegate { };
+        public event EventHandler<EncoderProgressEventArgs> OnEncodingProgress = delegate { };
         public FFmpegEncoder(ObservableCollection<VideoClip> clipsToEncode)
         {
             videoClips = clipsToEncode;
@@ -32,6 +50,14 @@ namespace JVTWpf
 
             //if (hwAccel)
             //    mergeCommand += "-vsync 0 -hwaccel cuvid -c:v h264_cuvid ";
+            int clipsToEncodeNum = 0;
+            int clipsEncoded = 0;
+            // We need to get the number of clips to encode for the events.
+            foreach(VideoClip clip in videoClips)
+            {
+                if (clip.Encode)
+                    clipsToEncodeNum++;
+            }
 
             foreach (VideoClip clip in videoClips)
             {
@@ -83,7 +109,7 @@ namespace JVTWpf
                 }
 
                 float clipVolume = (float)clip.Volume / 100;
-                /*if (clip.MergeAudioTracks)
+                /*if (clip.MergeAudioTracks) // Dead code, replaced by the command string builder.
                 {
                     // Merge mic and game audio tracks
                     if(clip.Encode)
@@ -140,7 +166,10 @@ namespace JVTWpf
                 if(clip.Encode)
                 {
                     Console.WriteLine("Running ffmpeg with cmd: " + ffmpegCommand);
+                    OnEncodingProgress(this, new EncoderProgressEventArgs { ClipsEncoded = clipsEncoded, ClipsTotal = clipsToEncodeNum, CurrentClipProcess = 0 });
                     ffmpegCommandExecute(ffmpegCommand);
+                    clipsEncoded++;
+                    OnEncodingProgress(this, new EncoderProgressEventArgs {ClipsEncoded = clipsEncoded, ClipsTotal = clipsToEncodeNum, CurrentClipProcess = 100 });
                 }
                 //}
             }
@@ -166,6 +195,7 @@ namespace JVTWpf
                 ffmpegCommandExecute(mergeCommand);
             }
             Console.WriteLine("Encoding finished.");
+            OnEncodingFinished(this, EventArgs.Empty);
         }
 
         private void ffmpegCommandExecute(string command)

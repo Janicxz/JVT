@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Management;
 using System.Text;
@@ -26,6 +27,7 @@ namespace JVTWpf
     {
         ObservableCollection<VideoClip> videoClips;
         FFmpegEncoder encoder;
+        public event EventHandler OnEncodingBegin = delegate { };
         public ClipsManager(ObservableCollection<VideoClip> videoClipsList)
         {
             InitializeComponent();
@@ -94,6 +96,10 @@ namespace JVTWpf
         private void ButtonEncode_Click(object sender, RoutedEventArgs e)
         {
             //Console.WriteLine("Clips " + videoClips);
+            if(OnEncodingBegin != null)
+            {
+                OnEncodingBegin(this, EventArgs.Empty);
+            }
             int resW, resH, bitrate, framerate;
             try
             {
@@ -111,8 +117,13 @@ namespace JVTWpf
             encoder = new FFmpegEncoder(videoClips);
             Console.WriteLine("Setting encoding values: {0}, {1}, {2}", resW + "x" + resH, bitrate, framerate);
             encoder.Encode(resW, resH, bitrate, framerate, (bool)checkBoxHardwareAccel.IsChecked);
-            System.Windows.Forms.MessageBox.Show("Encoding finished! \n" +
-                "Encoded clips can be found in " + Environment.CurrentDirectory + "\\videos");
+            //System.Windows.Forms.MessageBox.Show("Encoding finished! \n" +
+            //    "Encoded clips can be found in " + Environment.CurrentDirectory + "\\videos");
+            DialogResult result = System.Windows.Forms.MessageBox.Show("Encoding finished.\n Open the output folder?", "Encoder message", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+            if(result == System.Windows.Forms.DialogResult.Yes)
+            {
+                Process.Start(new ProcessStartInfo() {FileName = Environment.CurrentDirectory + "\\videos", UseShellExecute = true, Verb = "open" });
+            }
             //videoClips.Clear();
             //dataGridClips.Items.Refresh();
         }
