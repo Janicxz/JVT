@@ -208,6 +208,7 @@ namespace JVTWpf
             managerWindow.Closed -= ManagerWindow_Closed;
             managerWindow.dataGridClips.SelectionChanged -= DataGridClips_SelectionChanged;
             managerWindow.buttonEncode.Click -= ButtonEncode_Click1;
+            managerWindow.OnEncodingBegin -= ManagerWindow_OnEncodingBegin;
             managerWindow = null;
         }
 

@@ -53,10 +53,20 @@ namespace JVTWpf
             int clipsToEncodeNum = 0;
             int clipsEncoded = 0;
             // We need to get the number of clips to encode for the events.
+            bool tmpMerge = false;
             foreach(VideoClip clip in videoClips)
             {
                 if (clip.Encode)
                     clipsToEncodeNum++;
+                if(clip.Merge)
+                {
+                    if(!tmpMerge)
+                    {
+                        // Add the final merge clip (if enabled) only once
+                        clipsToEncodeNum++;
+                        tmpMerge = true;
+                    }
+                }
             }
 
             foreach (VideoClip clip in videoClips)
@@ -175,7 +185,7 @@ namespace JVTWpf
             }
             if(mergeClips)
             {
-
+                //clipsToEncodeNum++; // +1 for merged final clip
                 // Merge all the selected clips together
                 string mergeFilename = "clips_merged.mp4";
 
@@ -192,7 +202,11 @@ namespace JVTWpf
                 mergeCommand += string.Format("-filter_complex \"{2}concat=n={0}:v=1:a=1[outv][outa]\" -map \"[outv]\" -map \"[outa]\" -vsync 2 -y \"{1}\"", mergeNum, outputFolder + mergeFilename, mergeConcatCmd);
                 // build command string
                 Console.WriteLine("Running ffmpeg with merge cmd: " + mergeCommand);
+                OnEncodingProgress(this, new EncoderProgressEventArgs { ClipsEncoded = clipsEncoded, ClipsTotal = clipsToEncodeNum, CurrentClipProcess = 0 });
                 ffmpegCommandExecute(mergeCommand);
+                clipsEncoded++;
+                OnEncodingProgress(this, new EncoderProgressEventArgs { ClipsEncoded = clipsEncoded, ClipsTotal = clipsToEncodeNum, CurrentClipProcess = 100 });
+
             }
             Console.WriteLine("Encoding finished.");
             OnEncodingFinished(this, EventArgs.Empty);

@@ -41,6 +41,7 @@ namespace JVTWpf
             buttonEncode.Click += ButtonEncode_Click;
             dataGridContextDelete.Click += DataGridContextDelete_Click;
             buttonClearClips.Click += ButtonClearClips_Click;
+            TaskbarItemInfo = new System.Windows.Shell.TaskbarItemInfo();
         }
 
         private void DataGridContextDelete_Click(object sender, RoutedEventArgs e)
@@ -116,16 +117,54 @@ namespace JVTWpf
             }
             encoder = new FFmpegEncoder(videoClips);
             Console.WriteLine("Setting encoding values: {0}, {1}, {2}", resW + "x" + resH, bitrate, framerate);
-            encoder.Encode(resW, resH, bitrate, framerate, (bool)checkBoxHardwareAccel.IsChecked);
+            encoder.OnEncodingProgress += Encoder_OnEncodingProgress;
+            encoder.OnEncodingFinished += Encoder_OnEncodingFinished;
+            bool hwEncoding = false;
+            this.Dispatcher.Invoke(() =>
+            {
+                hwEncoding = (bool)checkBoxHardwareAccel.IsChecked;
+                this.TaskbarItemInfo.ProgressState = System.Windows.Shell.TaskbarItemProgressState.Normal;
+                this.Opacity = 0.4;
+                this.buttonEncode.IsEnabled = false;
+            });
+            Task encodingTask = Task.Run(() => encoder.Encode(resW, resH, bitrate, framerate, hwEncoding));
+            //encoder.Encode(resW, resH, bitrate, framerate, (bool)checkBoxHardwareAccel.IsChecked);
+
+            //videoClips.Clear();
+            //dataGridClips.Items.Refresh();
+        }
+
+        private void Encoder_OnEncodingFinished(object sender, EventArgs e)
+        {
+            Console.WriteLine("Event: Encoding finished.");
             //System.Windows.Forms.MessageBox.Show("Encoding finished! \n" +
             //    "Encoded clips can be found in " + Environment.CurrentDirectory + "\\videos");
             DialogResult result = System.Windows.Forms.MessageBox.Show("Encoding finished.\n Open the output folder?", "Encoder message", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
-            if(result == System.Windows.Forms.DialogResult.Yes)
+            if (result == System.Windows.Forms.DialogResult.Yes)
             {
-                Process.Start(new ProcessStartInfo() {FileName = Environment.CurrentDirectory + "\\videos", UseShellExecute = true, Verb = "open" });
+                Process.Start(new ProcessStartInfo() { FileName = Environment.CurrentDirectory + "\\videos", UseShellExecute = true, Verb = "open" });
             }
-            //videoClips.Clear();
-            //dataGridClips.Items.Refresh();
+            this.Dispatcher.Invoke(() =>
+            {
+                this.Title = "ClipsManager";
+                this.Opacity = 1.0;
+                this.buttonEncode.IsEnabled = true;
+                this.encodingProgressBar.Value = 0.0;
+                this.TaskbarItemInfo.ProgressState = System.Windows.Shell.TaskbarItemProgressState.None;
+            });
+            encoder.OnEncodingFinished -= Encoder_OnEncodingFinished;
+            encoder.OnEncodingProgress -= Encoder_OnEncodingProgress;
+        }
+
+        private void Encoder_OnEncodingProgress(object sender, EncoderProgressEventArgs e)
+        {
+            Console.WriteLine("Event: Encoding progress: Current encode: {0}%. Clips encoded: {1}/{2}", e.CurrentClipProcess, e.ClipsEncoded, e.ClipsTotal);
+            this.Dispatcher.Invoke(() =>
+            {
+                this.Title = string.Format("ClipsManager - Clips encoded: {1}/{2}", e.CurrentClipProcess, e.ClipsEncoded, e.ClipsTotal);
+                this.encodingProgressBar.Value = (double)e.ClipsEncoded / (double)e.ClipsTotal;
+                this.TaskbarItemInfo.ProgressValue = (double)e.ClipsEncoded / (double)e.ClipsTotal;
+            });
         }
 
         private string GetGraphicsCardName()

@@ -63,6 +63,7 @@
             <Label Content="Bitrate(Kb)" VerticalAlignment="Top" DockPanel.Dock="Right" HorizontalAlignment="Right" FontSize="16" Margin="0,-30,-190,0"/>
             <Label Content="FPS" VerticalAlignment="Top" DockPanel.Dock="Right" HorizontalAlignment="Right" FontSize="16" Margin="0,-30,-220,0"/>
             <CheckBox x:Name="checkBoxHardwareAccel" Content="Use hardware encoding (Nvidia NVENC)" IsEnabled="False" Height="21" VerticalAlignment="Top" Margin="-90,-30,0,0"/>
+            <ProgressBar x:Name="encodingProgressBar" Height="21" VerticalAlignment="Top" DockPanel.Dock="Top" Width="100" Maximum="1" Minimum="0"/>
             <!--
             <Label Content="Format" VerticalAlignment="Top" DockPanel.Dock="Right" HorizontalAlignment="Right" FontSize="16" Margin="0,-30,-290,0"/>
             -->
