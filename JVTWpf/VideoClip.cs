@@ -21,6 +21,7 @@ namespace JVTWpf
         private bool _mergeAudioTracks;
         public bool HasAudio = false;
         private int _volume;
+        private int _bitrate;
         private TimeSpan _start;
         private TimeSpan _end;
         private TimeSpan _length;
@@ -39,6 +40,16 @@ namespace JVTWpf
             {
                 _thumbnail = value;
                 NotifyPropertyChanged("thumbnail");
+            }
+        }
+
+        public int bitRate
+        {
+            get { return _bitrate; }
+            set
+            {
+                _bitrate = value;
+                NotifyPropertyChanged("bitRate");
             }
         }
         public string filePath

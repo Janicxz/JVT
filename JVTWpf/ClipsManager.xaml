@@ -47,6 +47,11 @@
                 <ComboBoxItem Content=".webm"/>
             </ComboBox>
             -->
+            <ComboBox x:Name="comboBoxFileSizeMax" HorizontalAlignment="Left" Height="25" VerticalAlignment="Top" FontSize="16" DockPanel.Dock="Right" Margin="0,-5,5,0" IsEditable="True" SelectedIndex="0">
+                <ComboBoxItem Content="0"/>
+                <ComboBoxItem Content="8"/>
+                <ComboBoxItem Content="20"/>
+            </ComboBox>
             <ComboBox x:Name="comboBoxFPS" HorizontalAlignment="Left" Height="25" VerticalAlignment="Top" FontSize="16" DockPanel.Dock="Right" Margin="0,-5,5,0" IsEditable="True" SelectedIndex="0">
                 <ComboBoxItem Content="60"/>
                 <ComboBoxItem Content="30"/>
@@ -62,6 +67,7 @@
             <Label Content="Resolution" VerticalAlignment="Top" DockPanel.Dock="Right" HorizontalAlignment="Right" FontSize="16" Margin="0,-30,-80,0"/>
             <Label Content="Bitrate(Kb)" VerticalAlignment="Top" DockPanel.Dock="Right" HorizontalAlignment="Right" FontSize="16" Margin="0,-30,-190,0"/>
             <Label Content="FPS" VerticalAlignment="Top" DockPanel.Dock="Right" HorizontalAlignment="Right" FontSize="16" Margin="0,-30,-220,0"/>
+            <Label Content="Max Filesize" VerticalAlignment="Top" DockPanel.Dock="Right" HorizontalAlignment="Right" FontSize="16" Margin="0,-45,-280,0"/>
             <CheckBox x:Name="checkBoxHardwareAccel" Content="Use hardware encoding (Nvidia NVENC)" IsEnabled="False" Height="21" VerticalAlignment="Top" Margin="-90,-30,0,0"/>
             <ProgressBar x:Name="encodingProgressBar" Height="21" VerticalAlignment="Top" DockPanel.Dock="Top" Width="100" Maximum="1" Minimum="0"/>
             <!--

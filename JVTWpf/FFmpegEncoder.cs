@@ -75,6 +75,8 @@ namespace JVTWpf
                 string outputFilename = outputFolder + clip.OutputName;
                 string forceOverwrite = clip.forceOverwrite ? "-y" : "-n";
                 string hwDecoder = "-vsync 0 -hwaccel cuvid -c:v h264_cuvid ";
+                if (clip.bitRate > 0)
+                    videoBitrate = clip.bitRate;
 
                 switch (clip.inputFileCodec)
                 {

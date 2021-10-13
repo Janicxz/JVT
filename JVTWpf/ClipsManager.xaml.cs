@@ -101,13 +101,14 @@ namespace JVTWpf
             {
                 OnEncodingBegin(this, EventArgs.Empty);
             }
-            int resW, resH, bitrate, framerate;
+            int resW, resH, bitrate, framerate, maxFileSize;
             try
             {
                 resW = int.Parse(comboBoxResolution.Text.Split('x')[0]);
                 resH = int.Parse(comboBoxResolution.Text.Split('x')[1]);
                 bitrate = int.Parse(comboBoxBitrate.Text);
                 framerate = int.Parse(comboBoxFPS.Text);
+                maxFileSize = int.Parse(comboBoxFileSizeMax.Text);
             }
             catch (Exception ex)
             {
@@ -127,6 +128,15 @@ namespace JVTWpf
                 this.Opacity = 0.4;
                 this.buttonEncode.IsEnabled = false;
             });
+            if(maxFileSize > 0)
+            {
+                foreach(VideoClip clip in videoClips)
+                {
+                    clip.bitRate = (maxFileSize*8192) / (int)clip.Length.TotalSeconds;
+                    clip.bitRate -= 384;
+                    clip.bitRate = clip.bitRate - ((clip.bitRate / 100) * 3);
+                }
+            }
             Task encodingTask = Task.Run(() => encoder.Encode(resW, resH, bitrate, framerate, hwEncoding));
             //encoder.Encode(resW, resH, bitrate, framerate, (bool)checkBoxHardwareAccel.IsChecked);
 
