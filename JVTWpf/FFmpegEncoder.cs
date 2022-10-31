@@ -189,7 +189,7 @@ namespace JVTWpf
             {
                 //clipsToEncodeNum++; // +1 for merged final clip
                 // Merge all the selected clips together
-                string mergeFilename = "clips_merged.mp4";
+                string mergeFilename = String.Format("{0}_merged.mp4", videoClips[0].OutputName);//string mergeFilename = "clips_merged.mp4";
 
                 mergeCommand += "-f lavfi -t 0.1 -i anullsrc "; // add silent track for no audio files
 

@@ -133,7 +133,7 @@ namespace JVTWpf
                 foreach(VideoClip clip in videoClips)
                 {
                     clip.bitRate = (maxFileSize*8192) / (int)clip.Length.TotalSeconds;
-                    clip.bitRate -= 384;
+                    clip.bitRate -= 384; // Take audio bitrate into account
                     clip.bitRate = clip.bitRate - ((clip.bitRate / 100) * 3);
                 }
             }
